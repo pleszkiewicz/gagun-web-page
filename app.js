@@ -33,6 +33,10 @@ const allowedFunctions = new Set([
   "cos",
   "cosh",
   "cbrt",
+  "cot",
+  "coth",
+  "csc",
+  "csch",
   "exp",
   "floor",
   "ln",
@@ -43,6 +47,8 @@ const allowedFunctions = new Set([
   "min",
   "pow",
   "round",
+  "sec",
+  "sech",
   "sign",
   "sin",
   "sinh",
@@ -64,6 +70,10 @@ const baseScope = Object.freeze({
   cos: Math.cos,
   cosh: Math.cosh,
   cbrt: Math.cbrt,
+  cot: (x) => 1 / Math.tan(x),
+  coth: (x) => 1 / Math.tanh(x),
+  csc: (x) => 1 / Math.sin(x),
+  csch: (x) => 1 / Math.sinh(x),
   e: Math.E,
   exp: Math.exp,
   floor: Math.floor,
@@ -77,6 +87,8 @@ const baseScope = Object.freeze({
   pi: Math.PI,
   pow: Math.pow,
   round: Math.round,
+  sec: (x) => 1 / Math.cos(x),
+  sech: (x) => 1 / Math.cosh(x),
   sign: Math.sign,
   sin: Math.sin,
   sinh: Math.sinh,
@@ -102,6 +114,14 @@ const drag = {
   x: 0,
   y: 0,
 };
+
+const safeNodeTypes = new Set([
+  "ConstantNode",
+  "OperatorNode",
+  "ParenthesisNode",
+  "FunctionNode",
+  "SymbolNode",
+]);
 
 function getFunctionName(index) {
   if (index === 0) return "f";
@@ -145,18 +165,45 @@ function validateNode(node) {
       return;
     }
 
-    const safeNodeTypes = new Set([
-      "ConstantNode",
-      "OperatorNode",
-      "ParenthesisNode",
-      "FunctionNode",
-      "SymbolNode",
-    ]);
-
     if (!safeNodeTypes.has(child.type)) {
       throw new Error(`Element "${child.type}" nie jest obsługiwany.`);
     }
   });
+}
+
+function formatExpressionNode(node) {
+  return node
+    .toString({ parenthesis: "auto", implicit: "hide" })
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function evaluateCompiled(compiled, x) {
+  const value = compiled.evaluate({ ...baseScope, x });
+  if (typeof value !== "number") return Number.NaN;
+  return value;
+}
+
+function compileDerivative(node) {
+  try {
+    const derivativeNode = window.math.derivative(node, "x", { simplify: true });
+    validateNode(derivativeNode);
+    const compiled = derivativeNode.compile();
+
+    return {
+      expression: formatExpressionNode(derivativeNode),
+      error: "",
+      evaluate(x) {
+        return evaluateCompiled(compiled, x);
+      },
+    };
+  } catch (error) {
+    return {
+      expression: "",
+      error: `Pochodna niedostępna: ${error.message}`,
+      evaluate: null,
+    };
+  }
 }
 
 function compileExpression(rawExpression) {
@@ -172,13 +219,13 @@ function compileExpression(rawExpression) {
   const node = window.math.parse(expression);
   validateNode(node);
   const compiled = node.compile();
+  const derivative = compileDerivative(node);
 
   return {
     expression,
+    derivative,
     evaluate(x) {
-      const value = compiled.evaluate({ ...baseScope, x });
-      if (typeof value !== "number") return Number.NaN;
-      return value;
+      return evaluateCompiled(compiled, x);
     },
   };
 }
@@ -194,6 +241,10 @@ function addFunction(rawExpression) {
     color: colors[functionIndex % colors.length],
     expression: compiled.expression,
     evaluator: compiled.evaluate,
+    derivativeExpression: compiled.derivative.expression,
+    derivativeEvaluator: compiled.derivative.evaluate,
+    derivativeError: compiled.derivative.error,
+    showDerivative: false,
     error: "",
   });
 
@@ -209,10 +260,18 @@ function updateFunction(id, rawExpression) {
     const compiled = compileExpression(rawExpression);
     target.expression = compiled.expression;
     target.evaluator = compiled.evaluate;
+    target.derivativeExpression = compiled.derivative.expression;
+    target.derivativeEvaluator = compiled.derivative.evaluate;
+    target.derivativeError = compiled.derivative.error;
+    target.showDerivative = target.showDerivative && Boolean(target.derivativeEvaluator);
     target.error = "";
   } catch (error) {
     target.expression = rawExpression.trim();
     target.evaluator = null;
+    target.derivativeExpression = "";
+    target.derivativeEvaluator = null;
+    target.derivativeError = "";
+    target.showDerivative = false;
     target.error = error.message;
   }
 
@@ -249,7 +308,36 @@ function renderFunctionList() {
     label.textContent = `${fn.name}(x)`;
 
     name.append(dot, label);
+
+    const derivativeSwitch = document.createElement("label");
+    derivativeSwitch.className = "switch-control";
+    derivativeSwitch.classList.toggle("is-disabled", !fn.derivativeEvaluator);
+
+    const derivativeCheckbox = document.createElement("input");
+    derivativeCheckbox.type = "checkbox";
+    derivativeCheckbox.checked = fn.showDerivative;
+    derivativeCheckbox.disabled = !fn.derivativeEvaluator;
+    derivativeCheckbox.setAttribute("role", "switch");
+    derivativeCheckbox.setAttribute(
+      "aria-label",
+      `Pokaż pochodną ${fn.name}(x)`,
+    );
+    derivativeCheckbox.addEventListener("change", () => {
+      fn.showDerivative = derivativeCheckbox.checked;
+      draw();
+    });
+
+    const switchTrack = document.createElement("span");
+    switchTrack.className = "switch-track";
+
+    const switchLabel = document.createElement("span");
+    switchLabel.className = "switch-label";
+    switchLabel.textContent = "Pochodna";
+
+    derivativeSwitch.append(derivativeCheckbox, switchTrack, switchLabel);
+
     title.append(name);
+    title.append(derivativeSwitch);
 
     const actions = document.createElement("div");
     actions.className = "function-actions";
@@ -281,11 +369,22 @@ function renderFunctionList() {
 
     actions.append(input, saveButton, deleteButton);
 
+    const derivativeInfo = document.createElement("p");
+    derivativeInfo.className = "derivative-expression";
+    derivativeInfo.style.borderLeftColor = fn.color;
+
+    if (fn.derivativeExpression) {
+      derivativeInfo.textContent = `${fn.name}'(x) = ${fn.derivativeExpression}`;
+    } else {
+      derivativeInfo.classList.add("is-unavailable");
+      derivativeInfo.textContent = fn.derivativeError || "Pochodna niedostępna.";
+    }
+
     const rowError = document.createElement("p");
     rowError.className = "row-error";
     rowError.textContent = fn.error;
 
-    item.append(title, actions, rowError);
+    item.append(title, actions, derivativeInfo, rowError);
     functionList.append(item);
   });
 }
@@ -443,47 +542,59 @@ function drawAxes(step, minX, maxX, minY, maxY) {
 
 function drawFunctions() {
   state.functions.forEach((fn) => {
-    if (!fn.evaluator) return;
+    drawFunctionGraph(fn.evaluator, fn.color, { dash: [], lineWidth: 2.4 });
 
-    ctx.save();
-    ctx.strokeStyle = fn.color;
-    ctx.lineWidth = 2.4;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    ctx.beginPath();
+    if (fn.showDerivative) {
+      drawFunctionGraph(fn.derivativeEvaluator, fn.color, {
+        dash: [9, 7],
+        lineWidth: 2,
+      });
+    }
+  });
+}
 
-    let hasPoint = false;
-    let lastY = 0;
-    const sampleStep = Math.max(1, Math.floor(2 / window.devicePixelRatio));
+function drawFunctionGraph(evaluator, color, options) {
+  if (!evaluator) return;
 
-    for (let screenX = 0; screenX <= state.width; screenX += sampleStep) {
-      const x = screenToWorld(screenX, 0).x;
-      const y = fn.evaluator(x);
-      const screen = worldToScreen(x, y);
-      const isDrawable =
-        Number.isFinite(y) &&
-        Number.isFinite(screen.y) &&
-        Math.abs(screen.y) < state.height * 20;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = options.lineWidth;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.setLineDash(options.dash);
+  ctx.beginPath();
 
-      if (!isDrawable) {
-        hasPoint = false;
-        continue;
-      }
+  let hasPoint = false;
+  let lastY = 0;
+  const sampleStep = Math.max(1, Math.floor(2 / window.devicePixelRatio));
 
-      const isJump = hasPoint && Math.abs(screen.y - lastY) > state.height * 1.6;
-      if (!hasPoint || isJump) {
-        ctx.moveTo(screenX, screen.y);
-      } else {
-        ctx.lineTo(screenX, screen.y);
-      }
+  for (let screenX = 0; screenX <= state.width; screenX += sampleStep) {
+    const x = screenToWorld(screenX, 0).x;
+    const y = evaluator(x);
+    const screen = worldToScreen(x, y);
+    const isDrawable =
+      Number.isFinite(y) &&
+      Number.isFinite(screen.y) &&
+      Math.abs(screen.y) < state.height * 20;
 
-      hasPoint = true;
-      lastY = screen.y;
+    if (!isDrawable) {
+      hasPoint = false;
+      continue;
     }
 
-    ctx.stroke();
-    ctx.restore();
-  });
+    const isJump = hasPoint && Math.abs(screen.y - lastY) > state.height * 1.6;
+    if (!hasPoint || isJump) {
+      ctx.moveTo(screenX, screen.y);
+    } else {
+      ctx.lineTo(screenX, screen.y);
+    }
+
+    hasPoint = true;
+    lastY = screen.y;
+  }
+
+  ctx.stroke();
+  ctx.restore();
 }
 
 function draw() {

@@ -274,6 +274,7 @@ input[type="text"]::placeholder {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .function-name {
@@ -293,10 +294,97 @@ input[type="text"]::placeholder {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.92);
 }
 
+.switch-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #4a5568;
+  font-size: 0.82rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.switch-control input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.switch-track {
+  position: relative;
+  width: 40px;
+  height: 23px;
+  flex: 0 0 auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #e8edf4;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(31, 41, 55, 0.22);
+  transition: transform 160ms ease;
+}
+
+.switch-control input:checked + .switch-track {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.switch-control input:checked + .switch-track::after {
+  transform: translateX(17px);
+}
+
+.switch-control input:focus-visible + .switch-track {
+  outline: 3px solid rgba(15, 107, 255, 0.28);
+  outline-offset: 2px;
+}
+
+.switch-control input:disabled + .switch-track {
+  opacity: 0.55;
+}
+
+.switch-control.is-disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
 .function-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
+}
+
+.derivative-expression {
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 7px;
+  background: #ffffff;
+  color: #3f4a5c;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.derivative-expression.is-unavailable {
+  color: #8a95a6;
+  font-family: inherit;
 }
 
 .function-actions .delete-button {
