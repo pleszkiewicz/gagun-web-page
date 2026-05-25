@@ -1,0 +1,48 @@
+window.gagunLocales = window.gagunLocales || {};
+
+window.gagunLocales.en = {
+  app: {
+    title: "Gagun Web Page",
+    eyebrow: "Gagun Tools",
+  },
+  navigation: {
+    title: "Pages",
+    open: "Open menu",
+    close: "Close menu",
+    unavailableTitle: "Page not available",
+    unavailableMessage: "This page is not registered yet.",
+  },
+  pages: {
+    plotter2d: {
+      navLabel: "2D Plotter",
+      title: "2D Plotter",
+      plotAreaLabel: "Plot area",
+      toolbarLabel: "View tools",
+      zoomOut: "Zoom out",
+      zoomIn: "Zoom in",
+      resetView: "Center",
+      canvasLabel: "Function graph",
+      eyebrow: "2D Plotter",
+      heading: "Function Graphs",
+      newFunction: "New function",
+      addFunction: "Add",
+      functionsLabel: "Added functions",
+      functionsHeading: "Functions",
+      syntaxLabel: "Syntax",
+      syntaxHeading: "Syntax",
+      showDerivative: "Show derivative of {name}(x)",
+      derivativeToggle: "Derivative",
+      save: "Save",
+      delete: "Delete",
+      derivativeUnavailable: "Derivative unavailable.",
+      derivativeUnavailableWithReason: "Derivative unavailable: {reason}",
+      unsupportedOperator: "Operator \"{operator}\" is not supported.",
+      unsupportedFunction: "Function \"{name}\" is not supported.",
+      unknownSymbol: "Unknown symbol \"{name}\".",
+      unsupportedElement: "Element \"{type}\" is not supported.",
+      mathNotLoaded: "The math.js library has not loaded.",
+      enterExpression: "Enter a function expression.",
+      gridStatus: "1 square = {step} | {scale} px/unit",
+    },
+  },
+};

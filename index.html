@@ -1,70 +1,60 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Wykresy funkcji 2D</title>
+    <title data-i18n="app.title">Gagun Web Page</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/mathjs@12/lib/browser/math.js"></script>
+    <script src="locales/en.js" defer></script>
+    <script src="pages/plotter-2d.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
-    <main class="app-shell">
-      <section class="plot-area" aria-label="Obszar wykresu">
-        <div class="plot-toolbar" aria-label="Narzędzia widoku">
-          <button class="tool-button" id="zoomOutButton" type="button" title="Pomniejsz">-</button>
-          <button class="tool-button" id="zoomInButton" type="button" title="Powiększ">+</button>
-          <button class="tool-button reset-button" id="resetViewButton" type="button">Centruj</button>
+    <div class="site-shell">
+      <button
+        class="menu-toggle"
+        id="menuToggle"
+        type="button"
+        aria-controls="siteNavigation"
+        aria-expanded="false"
+        data-i18n-aria-label="navigation.open"
+        data-i18n-title="navigation.open"
+      >
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </button>
+
+      <div class="nav-scrim" id="navScrim" hidden></div>
+
+      <nav
+        class="side-nav"
+        id="siteNavigation"
+        aria-label="Page navigation"
+        aria-hidden="true"
+      >
+        <div class="side-nav-header">
+          <div>
+            <p class="eyebrow" data-i18n="app.eyebrow">Gagun Tools</p>
+            <h1 data-i18n="navigation.title">Pages</h1>
+          </div>
+          <button
+            class="nav-close"
+            id="navClose"
+            type="button"
+            data-i18n-aria-label="navigation.close"
+            data-i18n-title="navigation.close"
+          >
+            &times;
+          </button>
         </div>
-        <canvas id="plotCanvas" aria-label="Wykres funkcji"></canvas>
-        <div class="plot-status" id="plotStatus" aria-live="polite"></div>
-      </section>
+        <div class="page-list" id="pageList"></div>
+      </nav>
 
-      <aside class="control-panel" aria-label="Panel funkcji">
-        <header class="panel-header">
-          <p class="eyebrow">Plotter 2D</p>
-          <h1>Wykresy funkcji</h1>
-        </header>
-
-        <form class="add-form" id="addFunctionForm">
-          <label for="functionInput">Nowa funkcja</label>
-          <div class="input-row">
-            <input
-              id="functionInput"
-              name="functionInput"
-              type="text"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="f(x) = sin(x) + x^2 / 4"
-            >
-            <button type="submit">Dodaj</button>
-          </div>
-          <p class="form-error" id="formError" role="alert"></p>
-        </form>
-
-        <section class="functions-section" aria-label="Dodane funkcje">
-          <div class="section-heading">
-            <h2>Funkcje</h2>
-            <span id="functionCount">0</span>
-          </div>
-          <div class="function-list" id="functionList"></div>
-        </section>
-
-        <section class="syntax-panel" aria-label="Składnia">
-          <h2>Składnia</h2>
-          <div class="syntax-grid">
-            <span>sin(x)</span>
-            <span>cos(x)</span>
-            <span>tan(x)</span>
-            <span>sqrt(x)</span>
-            <span>log(x)</span>
-            <span>abs(x)</span>
-            <span>pi</span>
-            <span>e</span>
-            <span>x^2</span>
-          </div>
-        </section>
-      </aside>
-    </main>
+      <main class="page-viewport" id="pageViewport" tabindex="-1">
+        <div class="page-host" id="pageHost"></div>
+      </main>
+    </div>
   </body>
 </html>
