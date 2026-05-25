@@ -6,6 +6,13 @@ const appState = {
   pageCleanup: null,
 };
 
+const pageThemeVariables = {
+  background: "--page-background",
+  backgroundSoft: "--page-background-soft",
+  mathColor: "--page-math-color",
+  mathOpacity: "--page-math-opacity",
+};
+
 const shell = {
   menuToggle: document.querySelector("#menuToggle"),
   navClose: document.querySelector("#navClose"),
@@ -54,6 +61,21 @@ function applyStaticTranslations() {
 
 function setDocumentTitle(page) {
   document.title = page ? `${t(page.titleKey)} | ${t("app.title")}` : t("app.title");
+}
+
+function applyPageTheme(page) {
+  Object.values(pageThemeVariables).forEach((property) => {
+    shell.pageViewport.style.removeProperty(property);
+  });
+
+  shell.pageViewport.dataset.pageId = page?.id || "unavailable";
+
+  Object.entries(page?.theme || {}).forEach(([key, value]) => {
+    const property = pageThemeVariables[key];
+    if (property) {
+      shell.pageViewport.style.setProperty(property, value);
+    }
+  });
 }
 
 function getHashPageId() {
@@ -161,6 +183,7 @@ function renderActivePage() {
   }
 
   appState.activePageId = page?.id || "";
+  applyPageTheme(page);
   renderNavigation();
 
   if (!page) {

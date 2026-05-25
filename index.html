@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title data-i18n="app.title">Gagun Web Page</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/apollonius-favicon.png">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/mathjs@12/lib/browser/math.js"></script>
     <script src="locales/en.js" defer></script>
@@ -35,9 +36,17 @@
         aria-hidden="true"
       >
         <div class="side-nav-header">
-          <div>
-            <p class="eyebrow" data-i18n="app.eyebrow">Gagun Tools</p>
-            <h1 data-i18n="navigation.title">Pages</h1>
+          <div class="side-brand">
+            <img
+              class="brand-mark"
+              src="assets/apollonius-menu.png"
+              alt=""
+              aria-hidden="true"
+            >
+            <div class="side-brand-text">
+              <p class="eyebrow" data-i18n="app.eyebrow">Gagun Tools</p>
+              <h1 data-i18n="navigation.title">Pages</h1>
+            </div>
           </div>
           <button
             class="nav-close"

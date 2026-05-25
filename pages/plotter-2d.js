@@ -808,5 +808,11 @@ window.gagunPageModules.push({
   id: "plotter-2d",
   navKey: "pages.plotter2d.navLabel",
   titleKey: "pages.plotter2d.title",
+  theme: {
+    background: "#eef7f4",
+    backgroundSoft: "#f8fbff",
+    mathColor: "rgba(23, 78, 110, 0.2)",
+    mathOpacity: "0.94",
+  },
   render: renderPlotter2D,
 });
