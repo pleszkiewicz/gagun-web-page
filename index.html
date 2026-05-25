@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Wykresy funkcji 2D</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@12/lib/browser/math.js"></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="plot-area" aria-label="Obszar wykresu">
+        <div class="plot-toolbar" aria-label="Narzędzia widoku">
+          <button class="tool-button" id="zoomOutButton" type="button" title="Pomniejsz">-</button>
+          <button class="tool-button" id="zoomInButton" type="button" title="Powiększ">+</button>
+          <button class="tool-button reset-button" id="resetViewButton" type="button">Centruj</button>
+        </div>
+        <canvas id="plotCanvas" aria-label="Wykres funkcji"></canvas>
+        <div class="plot-status" id="plotStatus" aria-live="polite"></div>
+      </section>
+
+      <aside class="control-panel" aria-label="Panel funkcji">
+        <header class="panel-header">
+          <p class="eyebrow">Plotter 2D</p>
+          <h1>Wykresy funkcji</h1>
+        </header>
+
+        <form class="add-form" id="addFunctionForm">
+          <label for="functionInput">Nowa funkcja</label>
+          <div class="input-row">
+            <input
+              id="functionInput"
+              name="functionInput"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="f(x) = sin(x) + x^2 / 4"
+            >
+            <button type="submit">Dodaj</button>
+          </div>
+          <p class="form-error" id="formError" role="alert"></p>
+        </form>
+
+        <section class="functions-section" aria-label="Dodane funkcje">
+          <div class="section-heading">
+            <h2>Funkcje</h2>
+            <span id="functionCount">0</span>
+          </div>
+          <div class="function-list" id="functionList"></div>
+        </section>
+
+        <section class="syntax-panel" aria-label="Składnia">
+          <h2>Składnia</h2>
+          <div class="syntax-grid">
+            <span>sin(x)</span>
+            <span>cos(x)</span>
+            <span>tan(x)</span>
+            <span>sqrt(x)</span>
+            <span>log(x)</span>
+            <span>abs(x)</span>
+            <span>pi</span>
+            <span>e</span>
+            <span>x^2</span>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </body>
+</html>
