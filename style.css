@@ -420,8 +420,7 @@ input[type="text"]::placeholder {
   color: #98a2b3;
 }
 
-.input-row button,
-.function-actions button {
+.input-row button {
   height: 42px;
   padding: 0 14px;
   background: var(--accent);
@@ -429,17 +428,12 @@ input[type="text"]::placeholder {
   font-weight: 750;
 }
 
-.input-row button:hover,
-.function-actions button:hover {
+.input-row button:hover {
   background: var(--accent-dark);
 }
 
 .form-error {
   min-height: 18px;
-}
-
-.form-error,
-.row-error {
   color: var(--danger);
   font-size: 0.82rem;
   font-weight: 650;
@@ -484,9 +478,10 @@ input[type="text"]::placeholder {
 }
 
 .function-item {
+  position: relative;
   display: grid;
   gap: 7px;
-  padding: 12px 12px 8px;
+  padding: 12px 12px 9px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel-soft);
@@ -497,16 +492,26 @@ input[type="text"]::placeholder {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .function-name {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto auto auto minmax(0, 1fr);
   align-items: center;
+  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
   gap: 8px;
   color: #202838;
   font-weight: 800;
+}
+
+.function-expression {
+  min-width: 0;
+  color: #202838;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 .color-dot {
@@ -517,10 +522,31 @@ input[type="text"]::placeholder {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.92);
 }
 
-.function-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 8px;
+.function-relation {
+  color: #536174;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.function-delete-button {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #9f2727;
+  padding: 0;
+  font-size: 1.1rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.function-delete-button:hover {
+  background: #ffe1e1;
 }
 
 .derivative-expression {
@@ -529,13 +555,11 @@ input[type="text"]::placeholder {
   align-items: center;
   gap: 10px;
   width: 100%;
-  min-height: 32px;
-  padding: 6px 7px 6px 10px;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
-  border-radius: 7px;
-  background: #ffffff;
-  color: #3f4a5c;
+  min-height: 28px;
+  padding: 2px 0 0;
+  border: 0;
+  background: transparent;
+  color: #8a95a6;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 0.8rem;
   font-weight: 650;
@@ -557,16 +581,10 @@ input[type="text"]::placeholder {
     color 160ms ease;
 }
 
-.derivative-toggle-button:hover:not(:disabled) {
-  border-color: var(--line-strong);
-  background: #f8fbff;
-}
-
 .derivative-toggle-button.is-active {
-  border-color: rgba(15, 107, 255, 0.34);
-  background: #eef4ff;
-  color: var(--accent-dark);
-  box-shadow: inset 0 0 0 1px rgba(15, 107, 255, 0.08);
+  background: transparent;
+  color: #111111;
+  box-shadow: none;
 }
 
 .derivative-toggle-button:disabled {
@@ -579,20 +597,26 @@ input[type="text"]::placeholder {
   min-height: 24px;
   place-items: center;
   padding: 0 9px;
-  border: 1px solid rgba(15, 107, 255, 0.26);
+  border: 1px solid #d7dee8;
   border-radius: 999px;
-  background: #eef4ff;
-  color: var(--accent-dark);
+  background: #f3f5f8;
+  color: #6d7786;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1;
 }
 
+.derivative-toggle-button:hover:not(:disabled) .derivative-toggle-label {
+  border-color: #c8d0db;
+  background: #edf0f4;
+  color: #555f6d;
+}
+
 .derivative-toggle-button.is-active .derivative-toggle-label {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: #ffffff;
+  border-color: #d7dee8;
+  background: #f3f5f8;
+  color: #6d7786;
 }
 
 .derivative-expression.is-unavailable {
@@ -604,15 +628,6 @@ input[type="text"]::placeholder {
   border-color: #d7dee8;
   background: #eef1f5;
   color: #7d8898;
-}
-
-.function-actions .delete-button {
-  background: #fff1f1;
-  color: #9f2727;
-}
-
-.function-actions .delete-button:hover {
-  background: #ffe1e1;
 }
 
 .syntax-panel {
@@ -830,13 +845,11 @@ input[type="text"]::placeholder {
     padding: 14px;
   }
 
-  .input-row,
-  .function-actions {
+  .input-row {
     grid-template-columns: 1fr;
   }
 
-  .input-row button,
-  .function-actions button {
+  .input-row button {
     width: 100%;
   }
 }

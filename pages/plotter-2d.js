@@ -420,39 +420,7 @@ function renderPlotter2D(container, { t }) {
       derivativeEvaluator: compiled.derivative.evaluate,
       derivativeError: compiled.derivative.error,
       showDerivative: false,
-      error: "",
     });
-
-    renderFunctionList();
-    draw();
-  }
-
-  function updateFunction(id, rawExpression) {
-    const target = state.functions.find((item) => item.id === id);
-    if (!target) return;
-
-    try {
-      const compiled = compileExpression(rawExpression);
-      target.expression = compiled.expression;
-      target.relationOperator = compiled.relationOperator;
-      target.fillDirection = compiled.fillDirection;
-      target.evaluator = compiled.evaluate;
-      target.derivativeExpression = compiled.derivative.expression;
-      target.derivativeEvaluator = compiled.derivative.evaluate;
-      target.derivativeError = compiled.derivative.error;
-      target.showDerivative = target.showDerivative && Boolean(target.derivativeEvaluator);
-      target.error = "";
-    } catch (error) {
-      target.expression = rawExpression.trim();
-      target.relationOperator = "=";
-      target.fillDirection = null;
-      target.evaluator = null;
-      target.derivativeExpression = "";
-      target.derivativeEvaluator = null;
-      target.derivativeError = "";
-      target.showDerivative = false;
-      target.error = error.message;
-    }
 
     renderFunctionList();
     draw();
@@ -473,6 +441,14 @@ function renderPlotter2D(container, { t }) {
       item.className = "function-item";
       item.dataset.id = fn.id;
 
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "function-delete-button";
+      deleteButton.textContent = "×";
+      deleteButton.setAttribute("aria-label", t("pages.plotter2d.delete"));
+      deleteButton.title = t("pages.plotter2d.delete");
+      deleteButton.addEventListener("click", () => deleteFunction(fn.id));
+
       const title = document.createElement("div");
       title.className = "function-title";
 
@@ -488,37 +464,17 @@ function renderPlotter2D(container, { t }) {
 
       name.append(dot, label);
 
-      title.append(name);
+      const operatorLabel = document.createElement("span");
+      operatorLabel.className = "function-relation";
+      operatorLabel.textContent = fn.relationOperator;
 
-      const actions = document.createElement("div");
-      actions.className = "function-actions";
+      const expression = document.createElement("span");
+      expression.className = "function-expression";
+      expression.textContent = fn.expression;
+      name.append(operatorLabel);
+      name.append(expression);
 
-      const input = document.createElement("input");
-      input.type = "text";
-      input.value = `${fn.name}(x) ${fn.relationOperator} ${fn.expression}`;
-      input.autocomplete = "off";
-      input.spellcheck = false;
-      input.setAttribute("aria-label", `${fn.name}(x)`);
-
-      const saveButton = document.createElement("button");
-      saveButton.type = "button";
-      saveButton.textContent = t("pages.plotter2d.save");
-      saveButton.addEventListener("click", () => updateFunction(fn.id, input.value));
-
-      input.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          updateFunction(fn.id, input.value);
-        }
-      });
-
-      const deleteButton = document.createElement("button");
-      deleteButton.type = "button";
-      deleteButton.className = "delete-button";
-      deleteButton.textContent = t("pages.plotter2d.delete");
-      deleteButton.addEventListener("click", () => deleteFunction(fn.id));
-
-      actions.append(input, saveButton, deleteButton);
+      title.append(name, deleteButton);
 
       const derivativeInfo = document.createElement("button");
       derivativeInfo.type = "button";
@@ -557,14 +513,7 @@ function renderPlotter2D(container, { t }) {
         derivativeInfo.append(derivativeExpressionText, derivativeToggleLabel);
       }
 
-      item.append(title, actions, derivativeInfo);
-
-      if (fn.error) {
-        const rowError = document.createElement("p");
-        rowError.className = "row-error";
-        rowError.textContent = fn.error;
-        item.append(rowError);
-      }
+      item.append(title, derivativeInfo);
 
       functionList.append(item);
     });
