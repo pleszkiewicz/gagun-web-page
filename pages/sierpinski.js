@@ -1,4 +1,4 @@
-function renderSierpinski(container, { t }) {
+function renderSierpinski(container, { locale, t }) {
   const modes = {
     triangle: {
       anchors: [
@@ -53,6 +53,10 @@ function renderSierpinski(container, { t }) {
           <h1 id="sierpinskiHeading">${t(modes[defaultMode].headingKey)}</h1>
         </header>
 
+        <div class="fractal-readout sierpinski-readout">
+          <code id="sierpinskiPointCount"></code>
+        </div>
+
         <div class="sierpinski-mode-control" role="radiogroup" aria-label="${t("pages.sierpinski.modeLabel")}">
           <div class="sierpinski-mode-heading">${t("pages.sierpinski.modeLabel")}</div>
           <div class="sierpinski-mode-options">
@@ -74,6 +78,7 @@ function renderSierpinski(container, { t }) {
   const panel = container.querySelector(".sierpinski-panel");
   const pageViewport = container.closest(".page-viewport");
   const heading = container.querySelector("#sierpinskiHeading");
+  const pointCountReadout = container.querySelector("#sierpinskiPointCount");
   const modeInputs = [...container.querySelectorAll('input[name="sierpinskiMode"]')];
   const ctx = canvas.getContext("2d", { alpha: false });
   const maxDevicePixelRatio = 2;
@@ -244,11 +249,15 @@ function renderSierpinski(container, { t }) {
 
   function syncPanel() {
     const geometry = modes[state.mode];
+    const formattedPointCount = new Intl.NumberFormat(locale).format(geometry.pointCount);
 
     modeInputs.forEach((input) => {
       input.checked = input.value === state.mode;
     });
     heading.textContent = t(geometry.headingKey);
+    pointCountReadout.textContent = t("pages.sierpinski.points", {
+      count: formattedPointCount,
+    });
   }
 
   function drawSierpinski() {

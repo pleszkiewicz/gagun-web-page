@@ -920,6 +920,12 @@ input[type="text"]::placeholder {
   color: #102f3a;
 }
 
+.sierpinski-readout code {
+  border-color: rgba(20, 100, 117, 0.16);
+  background: #e6f5f4;
+  color: #0f4f60;
+}
+
 .sierpinski-mode-control {
   display: grid;
   gap: 10px;

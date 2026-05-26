@@ -88,6 +88,7 @@ window.gagunLocales.en = {
       eyebrow: "Fractals",
       triangleHeading: "Sierpinski Triangle",
       squareHeading: "Sierpinski Carpet",
+      points: "{count} plotted points",
       modeLabel: "Fractal type",
       triangleMode: "Triangle",
       squareMode: "Square",
