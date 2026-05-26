@@ -9,6 +9,11 @@ window.gagunLocales.en = {
     title: "Pages",
     open: "Open menu",
     close: "Close menu",
+    sections: {
+      mathematics: "Mathematics",
+      fractals: "Fractals",
+      chemistry: "Chemistry",
+    },
     unavailableTitle: "Page not available",
     unavailableMessage: "This page is not registered yet.",
   },
@@ -47,8 +52,8 @@ window.gagunLocales.en = {
       inequalityNeedsYAxis: "Use y or f(x) on one side of the inequality.",
     },
     fractals: {
-      navLabel: "Fractals",
-      title: "Fractals",
+      navLabel: "Julia Sets",
+      title: "Julia Sets",
       pageLabel: "Animated Julia sets",
       canvasLabel: "Animated black and white Julia set",
       panelLabel: "Fractal controls",
@@ -75,8 +80,8 @@ window.gagunLocales.en = {
       rightLeafletsProbability: "Right leaflets",
     },
     sierpinski: {
-      navLabel: "Sierpinski Triangle",
-      title: "Sierpinski Triangle",
+      navLabel: "Sierpinski Triangle | Carpet",
+      title: "Sierpinski Triangle | Carpet",
       pageLabel: "Point-rendered Sierpinski fractal",
       canvasLabel: "Sierpinski fractal rendered with points",
       panelLabel: "Sierpinski controls",

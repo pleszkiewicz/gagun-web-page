@@ -238,6 +238,7 @@ function renderFractals(container, { t }) {
 window.gagunPageModules = window.gagunPageModules || [];
 window.gagunPageModules.push({
   id: "fractals",
+  sectionId: "fractals",
   navKey: "pages.fractals.navLabel",
   titleKey: "pages.fractals.title",
   theme: {

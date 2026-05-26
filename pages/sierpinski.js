@@ -315,6 +315,7 @@ function renderSierpinski(container, { t }) {
 window.gagunPageModules = window.gagunPageModules || [];
 window.gagunPageModules.push({
   id: "sierpinski",
+  sectionId: "fractals",
   navKey: "pages.sierpinski.navLabel",
   titleKey: "pages.sierpinski.title",
   theme: {

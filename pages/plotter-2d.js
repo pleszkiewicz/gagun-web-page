@@ -905,6 +905,7 @@ function renderPlotter2D(container, { t }) {
 window.gagunPageModules = window.gagunPageModules || [];
 window.gagunPageModules.push({
   id: "plotter-2d",
+  sectionId: "mathematics",
   navKey: "pages.plotter2d.navLabel",
   titleKey: "pages.plotter2d.title",
   theme: {

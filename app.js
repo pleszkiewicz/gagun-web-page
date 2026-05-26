@@ -4,7 +4,23 @@ const appState = {
   locale: DEFAULT_LOCALE,
   activePageId: "",
   pageCleanup: null,
+  collapsedSectionIds: new Set(),
 };
+
+const navigationSections = [
+  {
+    id: "mathematics",
+    titleKey: "navigation.sections.mathematics",
+  },
+  {
+    id: "fractals",
+    titleKey: "navigation.sections.fractals",
+  },
+  {
+    id: "chemistry",
+    titleKey: "navigation.sections.chemistry",
+  },
+];
 
 const pageThemeVariables = {
   background: "--page-background",
@@ -138,24 +154,97 @@ function closeNavigation({ restoreFocus = true } = {}) {
   }
 }
 
-function renderNavigation() {
-  shell.pageList.replaceChildren();
+function createPageLink(page) {
+  const link = document.createElement("a");
+  link.className = "page-link";
+  link.href = `#${encodeURIComponent(page.id)}`;
+  link.textContent = t(page.navKey);
+
+  if (page.id === appState.activePageId) {
+    link.classList.add("is-active");
+    link.setAttribute("aria-current", "page");
+  }
+
+  link.addEventListener("click", () => closeNavigation({ restoreFocus: false }));
+  return link;
+}
+
+function compareNavigationLabels(first, second) {
+  return new Intl.Collator(appState.locale, { sensitivity: "base" }).compare(first, second);
+}
+
+function getSectionedPages() {
+  const pagesBySection = new Map(navigationSections.map((section) => [section.id, []]));
 
   pageModules.forEach((page) => {
-    const link = document.createElement("a");
-    link.className = "page-link";
-    link.href = `#${encodeURIComponent(page.id)}`;
-    link.textContent = t(page.navKey);
+    const sectionId = page.sectionId || "mathematics";
+    const sectionPages = pagesBySection.get(sectionId) || pagesBySection.get("mathematics");
 
-    if (page.id === appState.activePageId) {
-      link.classList.add("is-active");
-      link.setAttribute("aria-current", "page");
-    }
-
-    link.addEventListener("click", () => closeNavigation({ restoreFocus: false }));
-    shell.pageList.append(link);
+    sectionPages.push(page);
   });
 
+  return navigationSections
+    .map((section) => ({
+      ...section,
+      pages: [...(pagesBySection.get(section.id) || [])].sort((firstPage, secondPage) =>
+        compareNavigationLabels(t(firstPage.navKey), t(secondPage.navKey)),
+      ),
+    }))
+    .filter((section) => section.pages.length > 0)
+    .sort((firstSection, secondSection) =>
+      compareNavigationLabels(t(firstSection.titleKey), t(secondSection.titleKey)),
+    );
+}
+
+function renderNavigationSection(section) {
+  const isExpanded = !appState.collapsedSectionIds.has(section.id);
+  const pagesId = `nav-section-pages-${section.id}`;
+
+  const sectionElement = document.createElement("section");
+  sectionElement.className = "nav-section";
+  sectionElement.classList.toggle("is-collapsed", !isExpanded);
+
+  const toggle = document.createElement("button");
+  toggle.className = "nav-section-toggle";
+  toggle.type = "button";
+  toggle.setAttribute("aria-expanded", String(isExpanded));
+  toggle.setAttribute("aria-controls", pagesId);
+
+  const label = document.createElement("span");
+  label.textContent = t(section.titleKey);
+
+  const chevron = document.createElement("span");
+  chevron.className = "nav-section-chevron";
+  chevron.setAttribute("aria-hidden", "true");
+
+  const pages = document.createElement("div");
+  pages.className = "nav-section-pages";
+  pages.id = pagesId;
+  pages.hidden = !isExpanded;
+  section.pages.forEach((page) => pages.append(createPageLink(page)));
+
+  toggle.append(label, chevron);
+  toggle.addEventListener("click", () => {
+    const nextIsExpanded = toggle.getAttribute("aria-expanded") !== "true";
+
+    toggle.setAttribute("aria-expanded", String(nextIsExpanded));
+    pages.hidden = !nextIsExpanded;
+    sectionElement.classList.toggle("is-collapsed", !nextIsExpanded);
+
+    if (nextIsExpanded) {
+      appState.collapsedSectionIds.delete(section.id);
+    } else {
+      appState.collapsedSectionIds.add(section.id);
+    }
+  });
+
+  sectionElement.append(toggle, pages);
+  shell.pageList.append(sectionElement);
+}
+
+function renderNavigation() {
+  shell.pageList.replaceChildren();
+  getSectionedPages().forEach(renderNavigationSection);
   setNavigationInteractivity(document.body.classList.contains("is-navigation-open"));
 }
 

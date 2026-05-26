@@ -285,6 +285,7 @@ function renderPeriodicTable(container, { t }) {
 window.gagunPageModules = window.gagunPageModules || [];
 window.gagunPageModules.push({
   id: "periodic-table",
+  sectionId: "chemistry",
   navKey: "pages.periodicTable.navLabel",
   titleKey: "pages.periodicTable.title",
   theme: {

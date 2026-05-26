@@ -316,6 +316,7 @@ function renderBarnsleyFern(container, { locale, t }) {
 window.gagunPageModules = window.gagunPageModules || [];
 window.gagunPageModules.push({
   id: "barnsley-fern",
+  sectionId: "fractals",
   navKey: "pages.barnsleyFern.navLabel",
   titleKey: "pages.barnsleyFern.title",
   theme: {
