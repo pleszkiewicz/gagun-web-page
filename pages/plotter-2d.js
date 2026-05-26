@@ -59,6 +59,7 @@ function renderPlotter2D(container, { t }) {
   `;
 
   const canvas = container.querySelector("#plotCanvas");
+  const plotArea = container.querySelector(".plot-area");
   const ctx = canvas.getContext("2d");
   const addForm = container.querySelector("#addFunctionForm");
   const functionInput = container.querySelector("#functionInput");
@@ -674,7 +675,7 @@ function renderPlotter2D(container, { t }) {
         ? screenToWorld(previousWidth / 2, previousHeight / 2)
         : { x: 0, y: 0 };
 
-    const rect = canvas.getBoundingClientRect();
+    const rect = plotArea.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     state.width = rect.width;
     state.height = rect.height;
@@ -779,7 +780,7 @@ function renderPlotter2D(container, { t }) {
   addForm.addEventListener("submit", handleSubmit);
 
   const resizeObserver = new ResizeObserver(resizeCanvas);
-  resizeObserver.observe(canvas);
+  resizeObserver.observe(plotArea);
 
   try {
     addFunction("f(x) = sin(x)");

@@ -299,12 +299,15 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 390px;
   gap: 20px;
-  min-height: calc(100vh - 40px);
+  height: calc(100vh - 40px);
+  height: calc(100dvh - 40px);
+  min-height: 0;
 }
 
 .plot-area {
   position: relative;
-  min-height: calc(100vh - 40px);
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid rgba(169, 181, 196, 0.7);
   border-radius: var(--radius);
@@ -316,7 +319,7 @@ h2 {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 560px;
+  min-height: 0;
   cursor: grab;
   touch-action: none;
 }
@@ -362,8 +365,10 @@ h2 {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: calc(100vh - 40px);
+  height: 100%;
+  min-height: 0;
   gap: 18px;
+  overflow: hidden;
   padding: 22px;
   border: 1px solid rgba(217, 224, 232, 0.95);
   border-radius: var(--radius);
@@ -442,6 +447,8 @@ input[type="text"]::placeholder {
 
 .functions-section {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  flex: 1 1 auto;
   gap: 10px;
   min-height: 0;
 }
@@ -467,7 +474,11 @@ input[type="text"]::placeholder {
 
 .function-list {
   display: grid;
+  align-content: start;
+  align-items: start;
+  grid-auto-rows: max-content;
   gap: 10px;
+  min-height: 0;
   overflow: auto;
   padding-right: 2px;
 }
@@ -606,6 +617,7 @@ input[type="text"]::placeholder {
 
 .syntax-panel {
   display: grid;
+  flex: 0 0 auto;
   gap: 10px;
   margin-top: auto;
   padding-top: 4px;
@@ -736,19 +748,33 @@ input[type="text"]::placeholder {
 @media (max-width: 980px) {
   .plotter-page {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: calc(100vh - 40px);
   }
 
   .plot-area,
   .control-panel {
+    height: auto;
     min-height: auto;
   }
 
   #plotCanvas {
-    min-height: 58vh;
+    height: 58vh;
+    min-height: 420px;
   }
 
   .control-panel {
     order: -1;
+    overflow: visible;
+  }
+
+  .functions-section {
+    grid-template-rows: auto;
+    flex: 0 1 auto;
+  }
+
+  .function-list {
+    overflow: visible;
   }
 
   .control-panel .panel-header {
