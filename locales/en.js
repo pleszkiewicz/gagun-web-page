@@ -44,6 +44,7 @@ window.gagunLocales.en = {
       unsupportedElement: "Element \"{type}\" is not supported.",
       mathNotLoaded: "The math.js library has not loaded.",
       enterExpression: "Enter a function expression.",
+      inequalityNeedsYAxis: "Use y or f(x) on one side of the inequality.",
     },
     fractals: {
       navLabel: "Fractals",

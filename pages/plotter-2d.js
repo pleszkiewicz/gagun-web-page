@@ -52,6 +52,7 @@ function renderPlotter2D(container, { t }) {
             <span>pi</span>
             <span>e</span>
             <span>x^2</span>
+            <span>f(x) &gt; 2x</span>
           </div>
         </section>
       </aside>
@@ -203,6 +204,110 @@ function renderPlotter2D(container, { t }) {
     return expression;
   }
 
+  function findTopLevelRelation(expression) {
+    let depth = 0;
+
+    for (let index = 0; index < expression.length; index += 1) {
+      const char = expression[index];
+
+      if (char === "(") {
+        depth += 1;
+        continue;
+      }
+
+      if (char === ")") {
+        depth = Math.max(0, depth - 1);
+        continue;
+      }
+
+      if (depth !== 0) continue;
+
+      const nextChar = expression[index + 1];
+      if ((char === ">" || char === "<") && nextChar === "=") {
+        return {
+          left: expression.slice(0, index).trim(),
+          operator: `${char}=`,
+          right: expression.slice(index + 2).trim(),
+        };
+      }
+
+      if (char === ">" || char === "<" || char === "=") {
+        return {
+          left: expression.slice(0, index).trim(),
+          operator: char,
+          right: expression.slice(index + 1).trim(),
+        };
+      }
+    }
+
+    return null;
+  }
+
+  function isYAxisReference(expression) {
+    const functionMatch = expression.match(
+      /^([a-zA-Z][a-zA-Z0-9_]*)\s*\(\s*x\s*\)$/u,
+    );
+
+    return (
+      /^y$/iu.test(expression) ||
+      (Boolean(functionMatch) && !allowedFunctions.has(functionMatch[1].toLowerCase()))
+    );
+  }
+
+  function invertRelationOperator(operator) {
+    return {
+      ">": "<",
+      ">=": "<=",
+      "<": ">",
+      "<=": ">=",
+      "=": "=",
+    }[operator];
+  }
+
+  function getFillDirection(operator) {
+    if (operator === ">" || operator === ">=") return "above";
+    if (operator === "<" || operator === "<=") return "below";
+    return null;
+  }
+
+  function getFunctionLineDash(fn) {
+    if (fn.fillDirection && !fn.relationOperator.includes("=")) {
+      return [9, 7];
+    }
+
+    return [];
+  }
+
+  function parseExpressionDefinition(rawExpression) {
+    const expression = rawExpression.trim().replaceAll("≥", ">=").replaceAll("≤", "<=");
+    const relation = findTopLevelRelation(expression);
+
+    if (!relation) {
+      return {
+        expression: stripDefinition(expression),
+        relationOperator: "=",
+        fillDirection: null,
+      };
+    }
+
+    const leftIsYAxis = isYAxisReference(relation.left);
+    const rightIsYAxis = isYAxisReference(relation.right);
+
+    if (!leftIsYAxis && !rightIsYAxis) {
+      throw new Error(t("pages.plotter2d.inequalityNeedsYAxis"));
+    }
+
+    const normalizedOperator = rightIsYAxis
+      ? invertRelationOperator(relation.operator)
+      : relation.operator;
+
+    return {
+      expression: leftIsYAxis ? relation.right : relation.left,
+      relationOperator: normalizedOperator,
+      fillDirection: getFillDirection(normalizedOperator),
+    };
+  }
+
   function validateNode(node) {
     node.traverse((child, _path, parent) => {
       if (child.type === "OperatorNode" && !allowedOperators.has(child.op)) {
@@ -277,18 +382,20 @@ function renderPlotter2D(container, { t }) {
       throw new Error(t("pages.plotter2d.mathNotLoaded"));
     }
 
-    const expression = stripDefinition(rawExpression);
-    if (!expression) {
+    const parsedExpression = parseExpressionDefinition(rawExpression);
+    if (!parsedExpression.expression) {
       throw new Error(t("pages.plotter2d.enterExpression"));
     }
 
-    const node = window.math.parse(expression);
+    const node = window.math.parse(parsedExpression.expression);
     validateNode(node);
     const compiled = node.compile();
     const derivative = compileDerivative(node);
 
     return {
-      expression,
+      expression: formatExpressionNode(node),
+      relationOperator: parsedExpression.relationOperator,
+      fillDirection: parsedExpression.fillDirection,
       derivative,
       evaluate(x) {
         return evaluateCompiled(compiled, x);
@@ -306,6 +413,8 @@ function renderPlotter2D(container, { t }) {
       name: getFunctionName(functionIndex),
       color: colors[functionIndex % colors.length],
       expression: compiled.expression,
+      relationOperator: compiled.relationOperator,
+      fillDirection: compiled.fillDirection,
       evaluator: compiled.evaluate,
       derivativeExpression: compiled.derivative.expression,
       derivativeEvaluator: compiled.derivative.evaluate,
@@ -325,6 +434,8 @@ function renderPlotter2D(container, { t }) {
     try {
       const compiled = compileExpression(rawExpression);
       target.expression = compiled.expression;
+      target.relationOperator = compiled.relationOperator;
+      target.fillDirection = compiled.fillDirection;
       target.evaluator = compiled.evaluate;
       target.derivativeExpression = compiled.derivative.expression;
       target.derivativeEvaluator = compiled.derivative.evaluate;
@@ -333,6 +444,8 @@ function renderPlotter2D(container, { t }) {
       target.error = "";
     } catch (error) {
       target.expression = rawExpression.trim();
+      target.relationOperator = "=";
+      target.fillDirection = null;
       target.evaluator = null;
       target.derivativeExpression = "";
       target.derivativeEvaluator = null;
@@ -382,7 +495,7 @@ function renderPlotter2D(container, { t }) {
 
       const input = document.createElement("input");
       input.type = "text";
-      input.value = `${fn.name}(x) = ${fn.expression}`;
+      input.value = `${fn.name}(x) ${fn.relationOperator} ${fn.expression}`;
       input.autocomplete = "off";
       input.spellcheck = false;
       input.setAttribute("aria-label", `${fn.name}(x)`);
@@ -606,15 +719,57 @@ function renderPlotter2D(container, { t }) {
 
   function drawFunctions() {
     state.functions.forEach((fn) => {
-      drawFunctionGraph(fn.evaluator, fn.color, { dash: [], lineWidth: 2.4 });
+      if (fn.fillDirection) {
+        drawInequalityFill(fn.evaluator, fn.color, fn.fillDirection);
+      }
+    });
+
+    state.functions.forEach((fn) => {
+      drawFunctionGraph(fn.evaluator, fn.color, {
+        dash: getFunctionLineDash(fn),
+        lineWidth: 2.4,
+      });
 
       if (fn.showDerivative) {
         drawFunctionGraph(fn.derivativeEvaluator, fn.color, {
-          dash: [9, 7],
+          dash: [1, 7],
           lineWidth: 2,
         });
       }
     });
+  }
+
+  function drawInequalityFill(evaluator, color, direction) {
+    if (!evaluator) return;
+
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    ctx.fillStyle = color;
+
+    for (let screenX = 0; screenX <= state.width; screenX += 1) {
+      const x = screenToWorld(screenX, 0).x;
+      const y = evaluator(x);
+      const screen = worldToScreen(x, y);
+
+      if (!Number.isFinite(y) || !Number.isFinite(screen.y)) continue;
+
+      if (direction === "above") {
+        const fillHeight = clamp(screen.y, 0, state.height);
+        if (fillHeight > 0) {
+          ctx.fillRect(screenX, 0, 1, fillHeight);
+        }
+      }
+
+      if (direction === "below") {
+        const fillStart = clamp(screen.y, 0, state.height);
+        const fillHeight = state.height - fillStart;
+        if (fillHeight > 0) {
+          ctx.fillRect(screenX, fillStart, 1, fillHeight);
+        }
+      }
+    }
+
+    ctx.restore();
   }
 
   function drawFunctionGraph(evaluator, color, options) {
