@@ -44,5 +44,18 @@ window.gagunLocales.en = {
       enterExpression: "Enter a function expression.",
       gridStatus: "1 square = {step} | {scale} px/unit",
     },
+    fractals: {
+      navLabel: "Fractals",
+      title: "Fractals",
+      pageLabel: "Animated Julia sets",
+      canvasLabel: "Animated black and white Julia set",
+      panelLabel: "Fractal controls",
+      eyebrow: "Fractals",
+      heading: "Julia Sets",
+      loopLabel: "Infinite loop",
+      resolution: "Resolution",
+      pause: "Pause",
+      resume: "Resume",
+    },
   },
 };
