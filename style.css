@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   --bg: #eef2f5;
-  --math-mask: url("assets/math-mask.svg");
+  --math-mask: url("assets/bg-math-transparent.png");
   --page-background: #eef6f8;
   --page-background-soft: #f8fbff;
   --page-math-color: rgba(26, 62, 95, 0.21);
@@ -161,8 +161,8 @@ h2 {
   mask-image: var(--math-mask);
   -webkit-mask-repeat: repeat;
   mask-repeat: repeat;
-  -webkit-mask-size: 430px 310px;
-  mask-size: 430px 310px;
+  -webkit-mask-size: 480px 320px;
+  mask-size: 480px 320px;
 }
 
 .side-nav > * {
@@ -272,8 +272,8 @@ h2 {
   mask-image: var(--math-mask);
   -webkit-mask-repeat: repeat;
   mask-repeat: repeat;
-  -webkit-mask-size: 610px 440px;
-  mask-size: 610px 440px;
+  -webkit-mask-size: 720px 480px;
+  mask-size: 720px 480px;
 }
 
 .page-host {
