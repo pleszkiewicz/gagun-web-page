@@ -8,7 +8,6 @@ function renderPlotter2D(container, { t }) {
           <button class="tool-button reset-button" id="resetViewButton" type="button">${t("pages.plotter2d.resetView")}</button>
         </div>
         <canvas id="plotCanvas" aria-label="${t("pages.plotter2d.canvasLabel")}"></canvas>
-        <div class="plot-status" id="plotStatus" aria-live="polite"></div>
       </section>
 
       <aside class="control-panel" aria-label="${t("pages.plotter2d.functionsLabel")}">
@@ -66,7 +65,6 @@ function renderPlotter2D(container, { t }) {
   const functionList = container.querySelector("#functionList");
   const formError = container.querySelector("#formError");
   const functionCount = container.querySelector("#functionCount");
-  const plotStatus = container.querySelector("#plotStatus");
   const zoomInButton = container.querySelector("#zoomInButton");
   const zoomOutButton = container.querySelector("#zoomOutButton");
   const resetViewButton = container.querySelector("#resetViewButton");
@@ -376,35 +374,7 @@ function renderPlotter2D(container, { t }) {
 
       name.append(dot, label);
 
-      const derivativeSwitch = document.createElement("label");
-      derivativeSwitch.className = "switch-control";
-      derivativeSwitch.classList.toggle("is-disabled", !fn.derivativeEvaluator);
-
-      const derivativeCheckbox = document.createElement("input");
-      derivativeCheckbox.type = "checkbox";
-      derivativeCheckbox.checked = fn.showDerivative;
-      derivativeCheckbox.disabled = !fn.derivativeEvaluator;
-      derivativeCheckbox.setAttribute("role", "switch");
-      derivativeCheckbox.setAttribute(
-        "aria-label",
-        t("pages.plotter2d.showDerivative", { name: fn.name }),
-      );
-      derivativeCheckbox.addEventListener("change", () => {
-        fn.showDerivative = derivativeCheckbox.checked;
-        draw();
-      });
-
-      const switchTrack = document.createElement("span");
-      switchTrack.className = "switch-track";
-
-      const switchLabel = document.createElement("span");
-      switchLabel.className = "switch-label";
-      switchLabel.textContent = t("pages.plotter2d.derivativeToggle");
-
-      derivativeSwitch.append(derivativeCheckbox, switchTrack, switchLabel);
-
       title.append(name);
-      title.append(derivativeSwitch);
 
       const actions = document.createElement("div");
       actions.className = "function-actions";
@@ -436,23 +406,52 @@ function renderPlotter2D(container, { t }) {
 
       actions.append(input, saveButton, deleteButton);
 
-      const derivativeInfo = document.createElement("p");
-      derivativeInfo.className = "derivative-expression";
+      const derivativeInfo = document.createElement("button");
+      derivativeInfo.type = "button";
+      derivativeInfo.className = "derivative-expression derivative-toggle-button";
+      derivativeInfo.disabled = !fn.derivativeEvaluator;
       derivativeInfo.style.borderLeftColor = fn.color;
+      derivativeInfo.setAttribute("aria-pressed", String(fn.showDerivative));
+      derivativeInfo.setAttribute(
+        "aria-label",
+        t("pages.plotter2d.toggleDerivative", { name: fn.name }),
+      );
+      derivativeInfo.classList.toggle("is-active", fn.showDerivative);
+      derivativeInfo.addEventListener("click", () => {
+        fn.showDerivative = !fn.showDerivative;
+        renderFunctionList();
+        draw();
+      });
+
+      const derivativeExpressionText = document.createElement("span");
+      derivativeExpressionText.className = "derivative-expression-text";
+
+      const derivativeToggleLabel = document.createElement("span");
+      derivativeToggleLabel.className = "derivative-toggle-label";
+      derivativeToggleLabel.textContent = fn.showDerivative
+        ? t("pages.plotter2d.hideDerivativeAction")
+        : t("pages.plotter2d.showDerivativeAction");
 
       if (fn.derivativeExpression) {
-        derivativeInfo.textContent = `${fn.name}'(x) = ${fn.derivativeExpression}`;
+        derivativeExpressionText.textContent = `${fn.name}'(x) = ${fn.derivativeExpression}`;
+        derivativeInfo.append(derivativeExpressionText, derivativeToggleLabel);
       } else {
         derivativeInfo.classList.add("is-unavailable");
-        derivativeInfo.textContent =
+        derivativeExpressionText.textContent =
           fn.derivativeError || t("pages.plotter2d.derivativeUnavailable");
+        derivativeToggleLabel.textContent = t("pages.plotter2d.derivativeUnavailableAction");
+        derivativeInfo.append(derivativeExpressionText, derivativeToggleLabel);
       }
 
-      const rowError = document.createElement("p");
-      rowError.className = "row-error";
-      rowError.textContent = fn.error;
+      item.append(title, actions, derivativeInfo);
 
-      item.append(title, actions, derivativeInfo, rowError);
+      if (fn.error) {
+        const rowError = document.createElement("p");
+        rowError.className = "row-error";
+        rowError.textContent = fn.error;
+        item.append(rowError);
+      }
+
       functionList.append(item);
     });
   }
@@ -523,11 +522,6 @@ function renderPlotter2D(container, { t }) {
 
     drawAxes(step, minX, maxX, minY, maxY);
     ctx.restore();
-
-    plotStatus.textContent = t("pages.plotter2d.gridStatus", {
-      step: formatTick(step, step),
-      scale: Math.round(state.scale),
-    });
   }
 
   function drawGridLines(minX, maxX, minY, maxY, step) {
