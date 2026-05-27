@@ -1043,6 +1043,115 @@ input[type="text"]::placeholder {
   width: min(1180px, 100%);
 }
 
+.lines-game-over {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 6, 13, 0.46);
+  backdrop-filter: blur(6px);
+}
+
+.lines-game-over-panel {
+  display: grid;
+  width: min(340px, 100%);
+  gap: 12px;
+  padding: 26px 28px 24px;
+  border: 1px solid rgba(226, 236, 248, 0.18);
+  border-radius: var(--radius);
+  background: rgba(10, 17, 27, 0.92);
+  color: #f7fbff;
+  text-align: center;
+  box-shadow:
+    0 24px 70px rgba(2, 6, 13, 0.52),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.lines-game-over-panel h2 {
+  color: #ffffff;
+  font-size: 2.1rem;
+  line-height: 1;
+}
+
+.lines-game-over-hint {
+  justify-self: center;
+  min-height: 32px;
+  padding: 9px 12px;
+  border: 1px solid rgba(229, 237, 248, 0.16);
+  border-radius: 999px;
+  background: rgba(229, 237, 248, 0.08);
+  color: rgba(216, 226, 239, 0.72);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.lines-game-over.is-dismissible .lines-game-over-hint {
+  border-color: rgba(56, 189, 248, 0.42);
+  background: rgba(56, 189, 248, 0.14);
+  color: #e7f7ff;
+}
+
+.lines-game-over-results {
+  display: grid;
+  gap: 8px;
+  margin: 2px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lines-game-over-result {
+  --player-color: #cbd5e1;
+  --player-rgb: 203, 213, 225;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  justify-self: center;
+  gap: 10px;
+  width: 70%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  border: 0;
+  background: rgba(var(--player-rgb), 0.06);
+  color: var(--player-color);
+  text-align: left;
+}
+
+.lines-game-over-player {
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.lines-game-over-status {
+  color: #f7fbff;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.8rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.lines-game-over-result.is-winner {
+  background: rgba(var(--player-rgb), 0.24);
+  color: var(--player-color);
+  box-shadow: none;
+}
+
+.lines-game-over-result.is-winner .lines-game-over-status {
+  color: var(--player-color);
+}
+
+.lines-game-over-result.is-eliminated {
+  background: rgba(var(--player-rgb), 0.035);
+  color: rgba(var(--player-rgb), 0.46);
+}
+
+.lines-game-over-result.is-eliminated .lines-game-over-status {
+  color: rgba(226, 238, 252, 0.52);
+}
+
 .lines-keyboard-panel {
   position: relative;
   z-index: 2;
@@ -1178,6 +1287,18 @@ input[type="text"]::placeholder {
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     0 0 0 1px rgba(var(--player-rgb), 0.22),
     0 12px 24px rgba(var(--player-rgb), 0.12);
+}
+
+.lines-player-chip.is-eliminated {
+  border-color: rgba(203, 213, 225, 0.18);
+  background: rgba(15, 23, 42, 0.22);
+  color: rgba(226, 238, 252, 0.42);
+  opacity: 0.58;
+  box-shadow: none;
+}
+
+.lines-player-chip.is-winner {
+  transform: translateY(-2px);
 }
 
 .lines-player-swatch {

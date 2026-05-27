@@ -1,6 +1,13 @@
 function renderLines(container, { t }) {
   const countdownDuration = 5000;
+  const gameOverLockDuration = 2000;
   const playerSpeed = 118;
+  const directions = {
+    up: { x: 0, y: -1 },
+    right: { x: 1, y: 0 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+  };
 
   const players = [
     {
@@ -8,9 +15,14 @@ function renderLines(container, { t }) {
       className: "is-player-one",
       label: t("pages.lines.playerOneLabel"),
       keys: t("pages.lines.playerOneKeys"),
-      keyCodes: ["KeyW", "KeyA", "KeyS", "KeyD"],
+      controls: {
+        KeyW: directions.up,
+        KeyA: directions.left,
+        KeyS: directions.down,
+        KeyD: directions.right,
+      },
       color: "#38bdf8",
-      direction: { x: 1, y: 0 },
+      direction: directions.right,
       getStart: (width, height, margin) => ({ x: margin, y: height / 2 }),
     },
     {
@@ -18,9 +30,14 @@ function renderLines(container, { t }) {
       className: "is-player-two",
       label: t("pages.lines.playerTwoLabel"),
       keys: t("pages.lines.playerTwoKeys"),
-      keyCodes: ["ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"],
+      controls: {
+        ArrowUp: directions.up,
+        ArrowLeft: directions.left,
+        ArrowDown: directions.down,
+        ArrowRight: directions.right,
+      },
       color: "#f59e0b",
-      direction: { x: -1, y: 0 },
+      direction: directions.left,
       getStart: (width, height, margin) => ({ x: width - margin, y: height / 2 }),
     },
     {
@@ -28,9 +45,14 @@ function renderLines(container, { t }) {
       className: "is-player-three",
       label: t("pages.lines.playerThreeLabel"),
       keys: t("pages.lines.playerThreeKeys"),
-      keyCodes: ["KeyI", "KeyJ", "KeyK", "KeyL"],
+      controls: {
+        KeyI: directions.up,
+        KeyJ: directions.left,
+        KeyK: directions.down,
+        KeyL: directions.right,
+      },
       color: "#a78bfa",
-      direction: { x: 0, y: -1 },
+      direction: directions.up,
       getStart: (width, height, margin) => ({ x: width / 2, y: height - margin }),
     },
     {
@@ -38,9 +60,14 @@ function renderLines(container, { t }) {
       className: "is-player-four",
       label: t("pages.lines.playerFourLabel"),
       keys: t("pages.lines.playerFourKeys"),
-      keyCodes: ["KeyT", "KeyF", "KeyG", "KeyH"],
+      controls: {
+        KeyT: directions.up,
+        KeyF: directions.left,
+        KeyG: directions.down,
+        KeyH: directions.right,
+      },
       color: "#22c55e",
-      direction: { x: 0, y: 1 },
+      direction: directions.down,
       getStart: (width, height, margin) => ({ x: width / 2, y: margin }),
     },
   ];
@@ -92,8 +119,13 @@ function renderLines(container, { t }) {
     ],
   ];
 
-  const playerByKeyCode = new Map(
-    players.flatMap((player) => player.keyCodes.map((keyCode) => [keyCode, player])),
+  const controlByKeyCode = new Map(
+    players.flatMap((player) =>
+      Object.entries(player.controls).map(([keyCode, direction]) => [
+        keyCode,
+        { player, direction },
+      ]),
+    ),
   );
 
   const state = {
@@ -103,6 +135,8 @@ function renderLines(container, { t }) {
     countdownStartedAt: 0,
     animationId: 0,
     lastFrameAt: 0,
+    gameOverTimeoutId: 0,
+    canDismissGameOver: false,
     runners: [],
     width: 0,
     height: 0,
@@ -193,6 +227,23 @@ function renderLines(container, { t }) {
             </div>
           </section>
         </div>
+
+        <div
+          class="lines-game-over"
+          id="linesGameOver"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="linesGameOverTitle"
+          hidden
+        >
+          <section class="lines-game-over-panel">
+            <h2 id="linesGameOverTitle">${t("pages.lines.gameOverTitle")}</h2>
+            <ul class="lines-game-over-results" id="linesGameOverResults"></ul>
+            <p class="lines-game-over-hint" id="linesGameOverHint" hidden>
+              ${t("pages.lines.gameOverDismiss")}
+            </p>
+          </section>
+        </div>
       </div>
     </section>
   `;
@@ -204,6 +255,9 @@ function renderLines(container, { t }) {
   const playerCount = container.querySelector("#linesPlayerCount");
   const countdown = container.querySelector("#linesCountdown");
   const countdownValue = container.querySelector("#linesCountdownValue");
+  const gameOver = container.querySelector("#linesGameOver");
+  const gameOverResults = container.querySelector("#linesGameOverResults");
+  const gameOverHint = container.querySelector("#linesGameOverHint");
   const activeKeys = new Map(
     [...container.querySelectorAll(".lines-key[data-code]")].map((element) => [
       element.dataset.code,
@@ -233,6 +287,7 @@ function renderLines(container, { t }) {
       const isRegistered = state.registeredPlayerIds.has(player.id);
       const chip = chipElements.get(player.id);
 
+      chip.classList.remove("is-eliminated", "is-winner");
       chip.classList.toggle("is-registered", isRegistered);
       chip.dataset.status = t(isRegistered ? "pages.lines.ready" : "pages.lines.waiting");
 
@@ -272,6 +327,74 @@ function renderLines(container, { t }) {
     };
   }
 
+  function isSamePoint(firstPoint, secondPoint) {
+    return (
+      Math.abs(firstPoint.x - secondPoint.x) < 0.001 &&
+      Math.abs(firstPoint.y - secondPoint.y) < 0.001
+    );
+  }
+
+  function getSegmentCrossProduct(segmentStart, segmentEnd, point) {
+    return (
+      (segmentEnd.x - segmentStart.x) * (point.y - segmentStart.y) -
+      (segmentEnd.y - segmentStart.y) * (point.x - segmentStart.x)
+    );
+  }
+
+  function isPointOnSegment(point, segmentStart, segmentEnd) {
+    const crossProduct = getSegmentCrossProduct(segmentStart, segmentEnd, point);
+
+    if (Math.abs(crossProduct) > 0.001) {
+      return false;
+    }
+
+    return (
+      point.x >= Math.min(segmentStart.x, segmentEnd.x) - 0.001 &&
+      point.x <= Math.max(segmentStart.x, segmentEnd.x) + 0.001 &&
+      point.y >= Math.min(segmentStart.y, segmentEnd.y) - 0.001 &&
+      point.y <= Math.max(segmentStart.y, segmentEnd.y) + 0.001
+    );
+  }
+
+  function doSegmentsIntersect(firstStart, firstEnd, secondStart, secondEnd) {
+    const firstTurnStart = getSegmentCrossProduct(firstStart, firstEnd, secondStart);
+    const firstTurnEnd = getSegmentCrossProduct(firstStart, firstEnd, secondEnd);
+    const secondTurnStart = getSegmentCrossProduct(secondStart, secondEnd, firstStart);
+    const secondTurnEnd = getSegmentCrossProduct(secondStart, secondEnd, firstEnd);
+
+    if (firstTurnStart * firstTurnEnd < -0.001 && secondTurnStart * secondTurnEnd < -0.001) {
+      return true;
+    }
+
+    return (
+      isPointOnSegment(secondStart, firstStart, firstEnd) ||
+      isPointOnSegment(secondEnd, firstStart, firstEnd) ||
+      isPointOnSegment(firstStart, secondStart, secondEnd) ||
+      isPointOnSegment(firstEnd, secondStart, secondEnd)
+    );
+  }
+
+  function isIntersectionOnlyAtMoveStart(move, otherMove) {
+    if (!isPointOnSegment(move.from, otherMove.from, otherMove.to)) {
+      return false;
+    }
+
+    return (
+      !isPointOnSegment(move.to, otherMove.from, otherMove.to) &&
+      (!isPointOnSegment(otherMove.from, move.from, move.to) ||
+        isSamePoint(otherMove.from, move.from)) &&
+      (!isPointOnSegment(otherMove.to, move.from, move.to) || isSamePoint(otherMove.to, move.from))
+    );
+  }
+
+  function isOppositeDirection(firstDirection, secondDirection) {
+    return firstDirection.x + secondDirection.x === 0 && firstDirection.y + secondDirection.y === 0;
+  }
+
+  function formatSurvivalTime(seconds) {
+    return seconds.toFixed(1);
+  }
+
   function initialiseRunners() {
     const margin = Math.max(30, Math.min(76, Math.min(state.width, state.height) * 0.08));
 
@@ -280,8 +403,10 @@ function renderLines(container, { t }) {
 
       return {
         player,
-        direction: player.direction,
+        direction: { ...player.direction },
+        queuedDirection: null,
         alive: true,
+        survivalTime: 0,
         x: start.x,
         y: start.y,
         path: [start],
@@ -315,6 +440,111 @@ function renderLines(container, { t }) {
     });
   }
 
+  function doesMoveHitTrail(runner, from, to) {
+    return state.runners.some((trailRunner) => {
+      for (let index = 1; index < trailRunner.path.length; index += 1) {
+        const isOwnRecentSegment = trailRunner === runner && index >= trailRunner.path.length - 1;
+
+        if (isOwnRecentSegment) {
+          continue;
+        }
+
+        if (doSegmentsIntersect(from, to, trailRunner.path[index - 1], trailRunner.path[index])) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  }
+
+  function doesMoveHitCurrentMoves(move, moves) {
+    return moves.some((otherMove) => {
+      if (move.runner === otherMove.runner) {
+        return false;
+      }
+
+      if (!doSegmentsIntersect(move.from, move.to, otherMove.from, otherMove.to)) {
+        return false;
+      }
+
+      return !isIntersectionOnlyAtMoveStart(move, otherMove);
+    });
+  }
+
+  function renderGameOverResults(winnerRunner) {
+    gameOverResults.replaceChildren(
+      ...state.runners.map((runner) => {
+        const result = document.createElement("li");
+        const name = document.createElement("span");
+        const status = document.createElement("span");
+        const isWinner = runner === winnerRunner;
+
+        result.className = `lines-game-over-result ${runner.player.className}`;
+        result.classList.toggle("is-winner", isWinner);
+        result.classList.toggle("is-eliminated", !isWinner);
+
+        name.className = "lines-game-over-player";
+        name.textContent = runner.player.label;
+
+        status.className = "lines-game-over-status";
+        status.textContent = isWinner
+          ? t("pages.lines.gameOverWins")
+          : t("pages.lines.gameOverSurvivalTime", {
+              time: formatSurvivalTime(runner.survivalTime),
+            });
+
+        result.append(name, status);
+        return result;
+      }),
+    );
+  }
+
+  function finishGame() {
+    if (state.phase !== "running") return;
+
+    const aliveRunners = state.runners.filter((runner) => runner.alive);
+    const winnerRunner = aliveRunners.length === 1 ? aliveRunners[0] : null;
+    const winnerText =
+      winnerRunner
+        ? t("pages.lines.winner", { player: winnerRunner.player.label })
+        : t("pages.lines.noWinner");
+
+    state.phase = "game-over";
+    window.cancelAnimationFrame(state.animationId);
+    state.animationId = 0;
+    window.clearTimeout(state.gameOverTimeoutId);
+    state.canDismissGameOver = false;
+    countdown.classList.remove("is-visible");
+    countdown.setAttribute("aria-hidden", "true");
+    overlay.hidden = true;
+    gameOver.hidden = false;
+    gameOver.classList.remove("is-dismissible");
+    renderGameOverResults(winnerRunner);
+    gameOverHint.hidden = true;
+    gameOverHint.textContent = t("pages.lines.gameOverDismiss");
+    clearPressedKeys();
+
+    playerCount.textContent = winnerText;
+
+    state.runners.forEach((runner) => {
+      const chip = chipElements.get(runner.player.id);
+
+      chip.classList.toggle("is-winner", runner === winnerRunner);
+      chip.classList.toggle("is-eliminated", runner !== winnerRunner);
+      chip.dataset.status = t(
+        runner === winnerRunner ? "pages.lines.winnerStatus" : "pages.lines.out",
+      );
+    });
+
+    state.gameOverTimeoutId = window.setTimeout(() => {
+      state.canDismissGameOver = true;
+      gameOver.classList.add("is-dismissible");
+      gameOverHint.hidden = false;
+      gameOverHint.textContent = t("pages.lines.gameOverDismiss");
+    }, gameOverLockDuration);
+  }
+
   function animateGame(now) {
     if (!state.lastFrameAt) {
       state.lastFrameAt = now;
@@ -323,27 +553,85 @@ function renderLines(container, { t }) {
     const elapsed = Math.min(0.05, (now - state.lastFrameAt) / 1000);
     state.lastFrameAt = now;
 
-    state.runners.forEach((runner) => {
-      if (!runner.alive) return;
+    const moves = state.runners
+      .filter((runner) => runner.alive)
+      .map((runner) => {
+        if (runner.queuedDirection) {
+          runner.direction = runner.queuedDirection;
+          runner.queuedDirection = null;
+        }
 
-      const nextPoint = {
-        x: runner.x + runner.direction.x * playerSpeed * elapsed,
-        y: runner.y + runner.direction.y * playerSpeed * elapsed,
-      };
-      const clampedPoint = clampToCanvas(nextPoint);
+        const from = { x: runner.x, y: runner.y };
+        const nextPoint = {
+          x: runner.x + runner.direction.x * playerSpeed * elapsed,
+          y: runner.y + runner.direction.y * playerSpeed * elapsed,
+        };
+        const clampedPoint = clampToCanvas(nextPoint);
 
-      runner.x = clampedPoint.x;
-      runner.y = clampedPoint.y;
-      runner.path.push(clampedPoint);
-      runner.alive =
-        clampedPoint.x === nextPoint.x &&
-        clampedPoint.y === nextPoint.y &&
-        state.width > 1 &&
-        state.height > 1;
+        return {
+          runner,
+          from,
+          to: clampedPoint,
+          inBounds:
+            clampedPoint.x === nextPoint.x &&
+            clampedPoint.y === nextPoint.y &&
+            state.width > 1 &&
+            state.height > 1,
+        };
+      });
+
+    moves.forEach((move) => {
+      move.crashed =
+        !move.inBounds ||
+        doesMoveHitTrail(move.runner, move.from, move.to) ||
+        doesMoveHitCurrentMoves(move, moves);
+    });
+
+    moves.forEach((move) => {
+      const { runner, to } = move;
+
+      runner.x = to.x;
+      runner.y = to.y;
+      runner.survivalTime += elapsed;
+      runner.path.push(to);
+      runner.alive = !move.crashed;
     });
 
     drawGame();
+
+    if (state.runners.filter((runner) => runner.alive).length <= 1) {
+      finishGame();
+      return;
+    }
+
     state.animationId = window.requestAnimationFrame(animateGame);
+  }
+
+  function resetRound() {
+    window.cancelAnimationFrame(state.countdownAnimationId);
+    window.cancelAnimationFrame(state.animationId);
+    window.clearTimeout(state.gameOverTimeoutId);
+    state.phase = "registration";
+    state.registeredPlayerIds.clear();
+    state.countdownAnimationId = 0;
+    state.countdownStartedAt = 0;
+    state.animationId = 0;
+    state.lastFrameAt = 0;
+    state.gameOverTimeoutId = 0;
+    state.canDismissGameOver = false;
+    state.runners = [];
+    countdown.classList.remove("is-visible");
+    countdown.setAttribute("aria-hidden", "true");
+    gameOver.hidden = true;
+    gameOver.classList.remove("is-dismissible");
+    gameOverResults.replaceChildren();
+    gameOverHint.hidden = true;
+    gameOverHint.textContent = t("pages.lines.gameOverDismiss");
+    overlay.hidden = false;
+    stage.classList.remove("is-game-running");
+    clearPressedKeys();
+    ctx.clearRect(0, 0, state.width, state.height);
+    updateRegistrationUi();
   }
 
   function startGame() {
@@ -387,7 +675,13 @@ function renderLines(container, { t }) {
   }
 
   function registerPlayer(player) {
-    if (state.phase === "running" || state.registeredPlayerIds.has(player.id)) return;
+    if (
+      state.phase === "running" ||
+      state.phase === "game-over" ||
+      state.registeredPlayerIds.has(player.id)
+    ) {
+      return;
+    }
 
     state.registeredPlayerIds.add(player.id);
     updateRegistrationUi();
@@ -397,11 +691,23 @@ function renderLines(container, { t }) {
     }
   }
 
+  function queuePlayerDirection(player, direction) {
+    if (state.phase !== "running") return;
+
+    const runner = state.runners.find((currentRunner) => currentRunner.player.id === player.id);
+
+    if (!runner || !runner.alive || isOppositeDirection(runner.direction, direction)) {
+      return;
+    }
+
+    runner.queuedDirection = direction;
+  }
+
   function setPressedKey(event, isPressed) {
-    const player = playerByKeyCode.get(event.code);
+    const control = controlByKeyCode.get(event.code);
     const keyElement = activeKeys.get(event.code);
 
-    if (!player || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!control || event.altKey || event.ctrlKey || event.metaKey) return;
 
     event.preventDefault();
 
@@ -410,15 +716,30 @@ function renderLines(container, { t }) {
     }
 
     if (isPressed) {
-      registerPlayer(player);
+      queuePlayerDirection(control.player, control.direction);
+      registerPlayer(control.player);
     }
+  }
+
+  function dismissGameOver(event) {
+    if (state.phase !== "game-over" || !state.canDismissGameOver) {
+      return false;
+    }
+
+    event.preventDefault();
+    resetRound();
+    return true;
   }
 
   function clearPressedKeys() {
     activeKeys.forEach((keyElement) => keyElement.classList.remove("is-pressed"));
   }
 
-  const handleKeyDown = (event) => setPressedKey(event, true);
+  const handleKeyDown = (event) => {
+    if (dismissGameOver(event)) return;
+
+    setPressedKey(event, true);
+  };
   const handleKeyUp = (event) => setPressedKey(event, false);
   const resizeObserver = new ResizeObserver(resizeCanvas);
 
@@ -432,6 +753,7 @@ function renderLines(container, { t }) {
   return () => {
     window.cancelAnimationFrame(state.countdownAnimationId);
     window.cancelAnimationFrame(state.animationId);
+    window.clearTimeout(state.gameOverTimeoutId);
     resizeObserver.disconnect();
     window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("keyup", handleKeyUp);
