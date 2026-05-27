@@ -20,6 +20,10 @@ const navigationSections = [
     id: "chemistry",
     titleKey: "navigation.sections.chemistry",
   },
+  {
+    id: "games",
+    titleKey: "navigation.sections.games",
+  },
 ];
 
 const pageThemeVariables = {
