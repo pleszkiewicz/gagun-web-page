@@ -135,7 +135,7 @@ h2 {
   top: 0;
   bottom: 0;
   left: 0;
-  width: min(340px, calc(100vw - 32px));
+  width: min(272px, calc(100vw - 32px));
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -223,9 +223,56 @@ h2 {
 
 .page-list {
   display: grid;
+  flex: 1 1 auto;
   min-height: 0;
+  align-content: start;
   gap: 16px;
   overflow-y: auto;
+}
+
+.side-nav-footer {
+  position: relative;
+  display: grid;
+  flex: 0 0 154px;
+  align-self: stretch;
+  align-items: end;
+  justify-items: center;
+  min-height: 154px;
+  margin: 0 -22px -22px;
+  overflow: hidden;
+  padding: 0 22px 14px;
+}
+
+.side-nav-footer::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-image: url("assets/boys-background.png");
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.side-nav-links {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.side-nav-links a {
+  color: #33445c;
+  font-size: 0.9rem;
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.side-nav-links a:hover {
+  color: #124b91;
 }
 
 .nav-section {
