@@ -17,6 +17,11 @@ window.gagunLocales.en = {
     },
     unavailableTitle: "Page not available",
     unavailableMessage: "This page is not registered yet.",
+    desktopBadge: "Desktop",
+    desktopOnlyTitle: "Desktop screen required",
+    desktopOnlyMessage:
+      "{page} needs a larger screen and keyboard controls. Open this page on a laptop or desktop computer to use it.",
+    desktopOnlyMenuHint: "Requires a larger screen and keyboard controls.",
   },
   pages: {
     plotter2d: {
@@ -281,6 +286,8 @@ window.gagunLocales.en = {
       playerThreeKeys: "IJKL",
       playerFourLabel: "P4",
       playerFourKeys: "TFGH",
+      desktopOnlyMessage:
+        "Lines needs a larger screen and keyboard controls. Open this page on a laptop or desktop computer to play.",
     },
   },
 };

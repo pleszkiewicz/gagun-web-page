@@ -33,6 +33,11 @@ const pageThemeVariables = {
   mathOpacity: "--page-math-opacity",
 };
 
+const desktopOnlyMediaQueries = [
+  window.matchMedia("(max-width: 767px)"),
+  window.matchMedia("(hover: none), (pointer: coarse)"),
+];
+
 const shell = {
   menuToggle: document.querySelector("#menuToggle"),
   navClose: document.querySelector("#navClose"),
@@ -162,7 +167,30 @@ function createPageLink(page) {
   const link = document.createElement("a");
   link.className = "page-link";
   link.href = `#${encodeURIComponent(page.id)}`;
-  link.textContent = t(page.navKey);
+
+  const label = document.createElement("span");
+  label.className = "page-link-label";
+  label.textContent = t(page.navKey);
+  link.append(label);
+
+  if (page.requiresDesktop) {
+    const isUnavailable = isDesktopOnlyPageUnavailable(page);
+
+    link.classList.add("is-desktop-only");
+    link.classList.toggle("is-unavailable", isUnavailable);
+    link.setAttribute("title", t("navigation.desktopOnlyMenuHint"));
+    link.setAttribute(
+      "aria-label",
+      `${t(page.navKey)}. ${t("navigation.desktopOnlyMenuHint")}`,
+    );
+
+    if (isUnavailable) {
+      const badge = document.createElement("span");
+      badge.className = "page-link-badge";
+      badge.textContent = t("navigation.desktopBadge");
+      link.append(badge);
+    }
+  }
 
   if (page.id === appState.activePageId) {
     link.classList.add("is-active");
@@ -267,6 +295,31 @@ function showUnavailablePage() {
   setDocumentTitle(null);
 }
 
+function isDesktopOnlyPageUnavailable(page) {
+  return Boolean(page?.requiresDesktop && desktopOnlyMediaQueries.some((query) => query.matches));
+}
+
+function showDesktopOnlyPage(page) {
+  const emptyState = document.createElement("section");
+  emptyState.className = "desktop-only-page";
+
+  const panel = document.createElement("div");
+  panel.className = "desktop-only-panel";
+
+  const heading = document.createElement("h1");
+  heading.textContent = t(page.desktopOnlyTitleKey || "navigation.desktopOnlyTitle");
+
+  const message = document.createElement("p");
+  message.textContent = t(page.desktopOnlyMessageKey || "navigation.desktopOnlyMessage", {
+    page: t(page.titleKey),
+  });
+
+  panel.append(heading, message);
+  emptyState.append(panel);
+  shell.pageHost.replaceChildren(emptyState);
+  setDocumentTitle(page);
+}
+
 function renderActivePage() {
   const page = getActivePage();
 
@@ -281,6 +334,11 @@ function renderActivePage() {
 
   if (!page) {
     showUnavailablePage();
+    return;
+  }
+
+  if (isDesktopOnlyPageUnavailable(page)) {
+    showDesktopOnlyPage(page);
     return;
   }
 
@@ -325,6 +383,10 @@ shell.navClose.addEventListener("click", closeNavigation);
 shell.navScrim.addEventListener("click", () => closeNavigation());
 
 window.addEventListener("hashchange", renderActivePage);
+
+desktopOnlyMediaQueries.forEach((query) => {
+  query.addEventListener("change", renderActivePage);
+});
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && document.body.classList.contains("is-navigation-open")) {

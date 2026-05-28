@@ -767,6 +767,8 @@ window.gagunPageModules.push({
   sectionId: "games",
   navKey: "pages.lines.navLabel",
   titleKey: "pages.lines.title",
+  requiresDesktop: true,
+  desktopOnlyMessageKey: "pages.lines.desktopOnlyMessage",
   theme: {
     background: "#dfe8f0",
     backgroundSoft: "#f7fbff",

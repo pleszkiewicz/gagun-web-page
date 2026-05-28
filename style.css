@@ -342,6 +342,8 @@ h2 {
 .page-link {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   min-height: 32px;
   padding: 0 2px 0 12px;
   border-left: 2px solid transparent;
@@ -349,6 +351,26 @@ h2 {
   font-size: 0.9rem;
   font-weight: 690;
   text-decoration: none;
+}
+
+.page-link-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-link-badge {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border: 1px solid rgba(100, 116, 139, 0.28);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.58);
+  color: #647084;
+  font-size: 0.64rem;
+  font-weight: 780;
+  line-height: 1.15;
+  text-transform: uppercase;
 }
 
 .page-link:hover {
@@ -359,6 +381,25 @@ h2 {
   border-left-color: rgba(15, 107, 255, 0.46);
   color: #124b91;
   font-weight: 760;
+}
+
+.page-link.is-desktop-only.is-unavailable {
+  color: #8290a3;
+}
+
+.page-link.is-desktop-only.is-unavailable:hover {
+  color: #5f6d80;
+}
+
+.page-link.is-active.is-desktop-only.is-unavailable {
+  border-left-color: rgba(100, 116, 139, 0.38);
+  color: #647084;
+}
+
+.page-link.is-desktop-only.is-unavailable .page-link-badge {
+  border-color: rgba(100, 116, 139, 0.22);
+  background: rgba(241, 245, 249, 0.68);
+  color: #7a8798;
 }
 
 .page-viewport {
@@ -403,6 +444,36 @@ h2 {
 
 .empty-page h1 {
   color: var(--ink);
+}
+
+.desktop-only-page {
+  display: grid;
+  min-height: calc(100vh - 40px);
+  place-items: center;
+  padding: 24px;
+}
+
+.desktop-only-panel {
+  display: grid;
+  width: min(100%, 520px);
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid rgba(169, 181, 196, 0.62);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  text-align: left;
+  backdrop-filter: blur(14px);
+}
+
+.desktop-only-panel h1 {
+  color: var(--ink);
+}
+
+.desktop-only-panel p {
+  max-width: 42rem;
+  line-height: 1.55;
 }
 
 .plotter-page {
@@ -1683,6 +1754,7 @@ input[type="text"]::placeholder {
   .fractals-page,
   .lines-page,
   .lines-stage,
+  .desktop-only-page,
   .empty-page {
     min-height: calc(100vh - 24px);
   }
