@@ -213,9 +213,13 @@ function renderLines(container, { t }) {
               <div>
                 <h1>${t("pages.lines.heading")}</h1>
               </div>
-              <p class="lines-countdown" id="linesCountdown" aria-hidden="true">
-                <span>${t("pages.lines.countdownLabel")}</span>
-                <strong id="linesCountdownValue">5s</strong>
+              <p
+                class="lines-countdown is-visible is-instruction"
+                id="linesCountdown"
+                aria-hidden="false"
+              >
+                <span id="linesCountdownLabel">${t("pages.lines.joinPrompt")}</span>
+                <strong id="linesCountdownValue" hidden>5s</strong>
               </p>
               <p class="lines-player-count" id="linesPlayerCount">${t("pages.lines.players")}</p>
             </header>
@@ -250,7 +254,7 @@ function renderLines(container, { t }) {
           <section class="lines-game-over-panel">
             <h2 id="linesGameOverTitle">${t("pages.lines.gameOverTitle")}</h2>
             <ul class="lines-game-over-results" id="linesGameOverResults"></ul>
-            <p class="lines-game-over-hint" id="linesGameOverHint" hidden>
+            <p class="lines-game-over-hint" id="linesGameOverHint" aria-hidden="true">
               ${t("pages.lines.gameOverDismiss")}
             </p>
           </section>
@@ -265,6 +269,7 @@ function renderLines(container, { t }) {
   const overlay = container.querySelector(".lines-control-overlay");
   const playerCount = container.querySelector("#linesPlayerCount");
   const countdown = container.querySelector("#linesCountdown");
+  const countdownLabel = container.querySelector("#linesCountdownLabel");
   const countdownValue = container.querySelector("#linesCountdownValue");
   const gameOver = container.querySelector("#linesGameOver");
   const gameOverResults = container.querySelector("#linesGameOverResults");
@@ -296,6 +301,30 @@ function renderLines(container, { t }) {
     return players.filter((player) => state.registeredPlayerIds.has(player.id));
   }
 
+  function showRegistrationPrompt() {
+    countdownLabel.textContent =
+      state.registeredPlayerIds.size === 1
+        ? t("pages.lines.waitingForSecondPlayer")
+        : t("pages.lines.joinPrompt");
+    countdownValue.hidden = true;
+    countdown.classList.add("is-visible", "is-instruction");
+    countdown.setAttribute("aria-hidden", "false");
+  }
+
+  function showCountdownTimer() {
+    countdownLabel.textContent = t("pages.lines.countdownLabel");
+    countdownValue.hidden = false;
+    countdown.classList.add("is-visible");
+    countdown.classList.remove("is-instruction");
+    countdown.setAttribute("aria-hidden", "false");
+  }
+
+  function hideCountdownStatus() {
+    countdown.classList.remove("is-visible", "is-instruction");
+    countdown.setAttribute("aria-hidden", "true");
+    countdownValue.hidden = true;
+  }
+
   function updateRegistrationUi() {
     const registeredCount = state.registeredPlayerIds.size;
 
@@ -303,6 +332,10 @@ function renderLines(container, { t }) {
       registeredCount > 0
         ? t("pages.lines.registeredPlayers", { count: registeredCount })
         : t("pages.lines.players");
+
+    if (state.phase === "registration") {
+      showRegistrationPrompt();
+    }
 
     players.forEach((player) => {
       const isRegistered = state.registeredPlayerIds.has(player.id);
@@ -740,13 +773,12 @@ function renderLines(container, { t }) {
     state.animationId = 0;
     window.clearTimeout(state.gameOverTimeoutId);
     state.canDismissGameOver = false;
-    countdown.classList.remove("is-visible");
-    countdown.setAttribute("aria-hidden", "true");
+    hideCountdownStatus();
     overlay.hidden = true;
     gameOver.hidden = false;
     gameOver.classList.remove("is-dismissible");
     renderGameOverResults(winnerRunner);
-    gameOverHint.hidden = true;
+    gameOverHint.setAttribute("aria-hidden", "true");
     gameOverHint.textContent = t("pages.lines.gameOverDismiss");
     clearPressedKeys();
     audioEngine.finishRound({ hasWinner: Boolean(winnerRunner) });
@@ -766,7 +798,7 @@ function renderLines(container, { t }) {
     state.gameOverTimeoutId = window.setTimeout(() => {
       state.canDismissGameOver = true;
       gameOver.classList.add("is-dismissible");
-      gameOverHint.hidden = false;
+      gameOverHint.setAttribute("aria-hidden", "false");
       gameOverHint.textContent = t("pages.lines.gameOverDismiss");
     }, gameOverLockDuration);
   }
@@ -856,14 +888,13 @@ function renderLines(container, { t }) {
     state.canDismissGameOver = false;
     state.runners = [];
     state.lastDangerSampleAt = 0;
-    countdown.classList.remove("is-visible");
-    countdown.setAttribute("aria-hidden", "true");
     gameOver.hidden = true;
     gameOver.classList.remove("is-dismissible");
     gameOverResults.replaceChildren();
-    gameOverHint.hidden = true;
+    gameOverHint.setAttribute("aria-hidden", "true");
     gameOverHint.textContent = t("pages.lines.gameOverDismiss");
     overlay.hidden = false;
+    showRegistrationPrompt();
     stage.classList.remove("is-game-running");
     clearPressedKeys();
     ctx.clearRect(0, 0, state.width, state.height);
@@ -876,8 +907,7 @@ function renderLines(container, { t }) {
 
     state.phase = "running";
     window.cancelAnimationFrame(state.countdownAnimationId);
-    countdown.classList.remove("is-visible");
-    countdown.setAttribute("aria-hidden", "true");
+    hideCountdownStatus();
     overlay.hidden = true;
     stage.classList.add("is-game-running");
     activeKeys.forEach((keyElement) => keyElement.classList.remove("is-pressed"));
@@ -907,8 +937,7 @@ function renderLines(container, { t }) {
   function startCountdown() {
     state.phase = "countdown";
     state.countdownStartedAt = performance.now();
-    countdown.classList.add("is-visible");
-    countdown.setAttribute("aria-hidden", "false");
+    showCountdownTimer();
     audioEngine.startRound();
     updateRegistrationUi();
     tickCountdown(state.countdownStartedAt);
@@ -985,6 +1014,7 @@ function renderLines(container, { t }) {
 
   resizeObserver.observe(stage);
   resizeCanvas();
+  showRegistrationPrompt();
   updateRegistrationUi();
   window.addEventListener("keydown", handleKeyDown);
   window.addEventListener("keyup", handleKeyUp);

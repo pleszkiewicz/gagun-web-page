@@ -1196,19 +1196,21 @@ input[type="text"]::placeholder {
 .lines-game-over-hint {
   justify-self: center;
   min-height: 32px;
-  padding: 9px 12px;
-  border: 1px solid rgba(229, 237, 248, 0.16);
-  border-radius: 999px;
-  background: rgba(229, 237, 248, 0.08);
-  color: rgba(216, 226, 239, 0.72);
+  padding: 9px 0;
+  color: rgba(183, 196, 212, 0.58);
   font-size: 0.78rem;
   font-weight: 850;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 160ms ease,
+    visibility 160ms ease;
 }
 
 .lines-game-over.is-dismissible .lines-game-over-hint {
-  border-color: rgba(56, 189, 248, 0.42);
-  background: rgba(56, 189, 248, 0.14);
-  color: #e7f7ff;
+  color: rgba(183, 196, 212, 0.7);
+  opacity: 1;
+  visibility: visible;
 }
 
 .lines-game-over-results {
@@ -1305,11 +1307,8 @@ input[type="text"]::placeholder {
   display: inline-grid;
   min-height: 34px;
   place-items: center;
-  padding: 0 12px;
-  border: 1px solid rgba(229, 237, 248, 0.16);
-  border-radius: 999px;
-  background: rgba(229, 237, 248, 0.08);
-  color: #d8e2ef;
+  padding: 0;
+  color: rgba(183, 196, 212, 0.58);
   font-size: 0.82rem;
   font-weight: 850;
   white-space: nowrap;
@@ -1323,11 +1322,8 @@ input[type="text"]::placeholder {
   align-items: center;
   gap: 8px;
   min-height: 38px;
-  padding: 0 12px;
-  border: 1px solid rgba(245, 158, 11, 0.36);
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.12);
-  color: #f8d99b;
+  padding: 0;
+  color: rgba(216, 226, 239, 0.82);
   font-size: 0.78rem;
   font-weight: 850;
   white-space: nowrap;
@@ -1344,8 +1340,12 @@ input[type="text"]::placeholder {
   visibility: visible;
 }
 
+.lines-countdown.is-instruction {
+  color: rgba(216, 226, 239, 0.86);
+}
+
 .lines-countdown strong {
-  color: #ffffff;
+  color: rgba(247, 251, 255, 0.88);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 1rem;
   line-height: 1;
@@ -1455,11 +1455,8 @@ input[type="text"]::placeholder {
   content: attr(data-status);
   grid-column: 1 / -1;
   justify-self: start;
-  padding: 4px 7px;
-  border: 1px solid rgba(var(--player-rgb), 0.2);
-  border-radius: 999px;
-  background: rgba(3, 7, 18, 0.18);
-  color: rgba(183, 196, 212, 0.72);
+  padding: 4px 0 0;
+  color: rgba(183, 196, 212, 0.58);
   font-size: 0.58rem;
   font-weight: 900;
   line-height: 1;
@@ -1467,9 +1464,7 @@ input[type="text"]::placeholder {
 }
 
 .lines-player-chip.is-registered::after {
-  border-color: rgba(var(--player-rgb), 0.66);
-  background: rgba(var(--player-rgb), 0.34);
-  color: #ffffff;
+  color: rgba(238, 245, 255, 0.78);
 }
 
 .lines-player-markers {
