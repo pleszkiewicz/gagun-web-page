@@ -170,10 +170,19 @@ function renderPlotter2D(container, { t }) {
     nextId: 1,
   };
 
+  const activePointers = new Map();
   const drag = {
     active: false,
     x: 0,
     y: 0,
+  };
+  const touchGesture = {
+    active: false,
+    mode: null,
+    startCentroid: null,
+    lastCentroid: null,
+    startDistance: 0,
+    lastDistance: 0,
   };
 
   const safeNodeTypes = new Set([
@@ -798,11 +807,18 @@ function renderPlotter2D(container, { t }) {
     draw();
   }
 
+  function transformView(previousScreen, nextScreen, factor) {
+    const before = screenToWorld(previousScreen.x, previousScreen.y);
+    const nextScale = clamp(state.scale * factor, state.minScale, state.maxScale);
+
+    state.scale = nextScale;
+    state.origin.x = nextScreen.x - before.x * state.scale;
+    state.origin.y = nextScreen.y + before.y * state.scale;
+  }
+
   function zoomAt(screenX, screenY, factor) {
-    const before = screenToWorld(screenX, screenY);
-    state.scale = clamp(state.scale * factor, state.minScale, state.maxScale);
-    state.origin.x = screenX - before.x * state.scale;
-    state.origin.y = screenY + before.y * state.scale;
+    const screen = { x: screenX, y: screenY };
+    transformView(screen, screen, factor);
     draw();
   }
 
@@ -825,6 +841,109 @@ function renderPlotter2D(container, { t }) {
     };
   }
 
+  function clonePoint(point) {
+    return { x: point.x, y: point.y };
+  }
+
+  function getTouchGestureMetrics() {
+    const pointers = Array.from(activePointers.values()).slice(0, 2);
+    if (pointers.length < 2) return null;
+
+    const [first, second] = pointers;
+    const centroid = {
+      x: (first.x + second.x) / 2,
+      y: (first.y + second.y) / 2,
+    };
+
+    return {
+      centroid,
+      distance: Math.hypot(second.x - first.x, second.y - first.y),
+    };
+  }
+
+  function startDrag(pointer) {
+    drag.active = true;
+    drag.x = pointer.x;
+    drag.y = pointer.y;
+    canvas.classList.add("is-dragging");
+  }
+
+  function stopDrag() {
+    drag.active = false;
+  }
+
+  function startTouchGesture() {
+    const metrics = getTouchGestureMetrics();
+    if (!metrics) return;
+
+    stopDrag();
+    touchGesture.active = true;
+    touchGesture.mode = null;
+    touchGesture.startCentroid = clonePoint(metrics.centroid);
+    touchGesture.lastCentroid = clonePoint(metrics.centroid);
+    touchGesture.startDistance = Math.max(metrics.distance, 1);
+    touchGesture.lastDistance = Math.max(metrics.distance, 1);
+    canvas.classList.add("is-dragging");
+  }
+
+  function stopTouchGesture() {
+    touchGesture.active = false;
+    touchGesture.mode = null;
+    touchGesture.startCentroid = null;
+    touchGesture.lastCentroid = null;
+    touchGesture.startDistance = 0;
+    touchGesture.lastDistance = 0;
+  }
+
+  function resolveTouchGestureMode(metrics) {
+    if (touchGesture.mode) return touchGesture.mode;
+
+    const distanceDelta = Math.abs(metrics.distance - touchGesture.startDistance);
+    const distanceRatioDelta = distanceDelta / Math.max(touchGesture.startDistance, 1);
+    const centroidDeltaX = metrics.centroid.x - touchGesture.startCentroid.x;
+    const centroidDeltaY = metrics.centroid.y - touchGesture.startCentroid.y;
+    const absCentroidDeltaX = Math.abs(centroidDeltaX);
+    const absCentroidDeltaY = Math.abs(centroidDeltaY);
+    const mostlyVertical =
+      absCentroidDeltaY > 8 && absCentroidDeltaY > absCentroidDeltaX * 1.25;
+    const distanceIsStable = distanceDelta < Math.max(12, absCentroidDeltaY * 0.35);
+
+    if (mostlyVertical && distanceIsStable) {
+      touchGesture.mode = "verticalZoom";
+    } else if (distanceDelta > 8 || distanceRatioDelta > 0.035) {
+      touchGesture.mode = "pinch";
+    }
+
+    return touchGesture.mode;
+  }
+
+  function handleTouchGestureMove() {
+    if (!touchGesture.active) {
+      startTouchGesture();
+    }
+
+    const metrics = getTouchGestureMetrics();
+    if (!metrics || !touchGesture.active) return;
+
+    const mode = resolveTouchGestureMode(metrics);
+    if (!mode) return;
+
+    if (mode === "pinch") {
+      const factor = metrics.distance / Math.max(touchGesture.lastDistance, 1);
+      if (!Number.isFinite(factor) || factor <= 0) return;
+      transformView(touchGesture.lastCentroid, metrics.centroid, factor);
+    } else {
+      const deltaY = metrics.centroid.y - touchGesture.lastCentroid.y;
+      const factor = clamp(Math.exp(-deltaY * 0.005), 0.45, 2.2);
+      if (!Number.isFinite(factor) || factor <= 0) return;
+      transformView(metrics.centroid, metrics.centroid, factor);
+    }
+
+    touchGesture.lastCentroid = clonePoint(metrics.centroid);
+    touchGesture.lastDistance = Math.max(metrics.distance, 1);
+    draw();
+  }
+
   function handleWheel(event) {
     event.preventDefault();
     const pointer = getPointerPosition(event);
@@ -833,18 +952,38 @@ function renderPlotter2D(container, { t }) {
   }
 
   function handlePointerDown(event) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    event.preventDefault();
     const pointer = getPointerPosition(event);
-    drag.active = true;
-    drag.x = pointer.x;
-    drag.y = pointer.y;
-    canvas.classList.add("is-dragging");
+    activePointers.set(event.pointerId, pointer);
     canvas.setPointerCapture(event.pointerId);
+
+    if (activePointers.size === 1) {
+      stopTouchGesture();
+      startDrag(pointer);
+    } else {
+      startTouchGesture();
+    }
   }
 
   function handlePointerMove(event) {
-    if (!drag.active) return;
+    if (!activePointers.has(event.pointerId)) return;
 
+    event.preventDefault();
     const pointer = getPointerPosition(event);
+    activePointers.set(event.pointerId, pointer);
+
+    if (activePointers.size >= 2) {
+      handleTouchGestureMove();
+      return;
+    }
+
+    if (!drag.active) {
+      startDrag(pointer);
+      return;
+    }
+
     state.origin.x += pointer.x - drag.x;
     state.origin.y += pointer.y - drag.y;
     drag.x = pointer.x;
@@ -852,12 +991,30 @@ function renderPlotter2D(container, { t }) {
     draw();
   }
 
-  function endDrag(event) {
-    drag.active = false;
-    canvas.classList.remove("is-dragging");
+  function endPointerInteraction(event) {
+    if (activePointers.has(event.pointerId)) {
+      event.preventDefault();
+      activePointers.delete(event.pointerId);
+    }
+
     if (canvas.hasPointerCapture(event.pointerId)) {
       canvas.releasePointerCapture(event.pointerId);
     }
+
+    if (activePointers.size >= 2) {
+      startTouchGesture();
+      return;
+    }
+
+    if (activePointers.size === 1) {
+      stopTouchGesture();
+      startDrag(Array.from(activePointers.values())[0]);
+      return;
+    }
+
+    stopDrag();
+    stopTouchGesture();
+    canvas.classList.remove("is-dragging");
   }
 
   function handleSubmit(event) {
@@ -876,8 +1033,8 @@ function renderPlotter2D(container, { t }) {
   canvas.addEventListener("wheel", handleWheel, { passive: false });
   canvas.addEventListener("pointerdown", handlePointerDown);
   canvas.addEventListener("pointermove", handlePointerMove);
-  canvas.addEventListener("pointerup", endDrag);
-  canvas.addEventListener("pointercancel", endDrag);
+  canvas.addEventListener("pointerup", endPointerInteraction);
+  canvas.addEventListener("pointercancel", endPointerInteraction);
   zoomInButton.addEventListener("click", () => zoomAtCenter(1.25));
   zoomOutButton.addEventListener("click", () => zoomAtCenter(0.8));
   resetViewButton.addEventListener("click", resetView);
