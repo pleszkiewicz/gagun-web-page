@@ -8,6 +8,7 @@ HTML web page created by Gagun
 - `locales/en.js` contains English UI strings. Add another locale file with the same keys to translate the app.
 - `pages/plotter-2d.js` registers the `2D Plotter` page.
 - `pages/plotter-3d.js` registers the `3D Plotter` page.
+- `pages/fourier-epicycles.js` registers the Fourier epicycles animation page.
 - `pages/fractals.js` registers the animated black-and-white Julia sets page.
 - `pages/periodic-table.js` registers an interactive periodic table with element details and category legend.
 - `pages/lines.js` registers the Lines game start screen with keyboard control groups.

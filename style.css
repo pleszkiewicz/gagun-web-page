@@ -894,6 +894,181 @@ input[type="text"]::placeholder {
   font-weight: 650;
 }
 
+.fourier-page {
+  position: relative;
+  min-height: calc(100vh - 40px);
+  overflow: hidden;
+  border: 1px solid rgba(54, 76, 88, 0.22);
+  border-radius: var(--radius);
+  background: #f9fbff;
+  box-shadow: var(--shadow);
+}
+
+.fourier-canvas {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 40px);
+  height: calc(100dvh - 40px);
+  min-height: 640px;
+  background: #f9fbff;
+}
+
+.fourier-panel {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  display: grid;
+  width: min(352px, calc(100% - 40px));
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(29, 58, 75, 0.18);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 40px rgba(36, 54, 67, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.fourier-panel-header {
+  display: grid;
+  gap: 4px;
+}
+
+.fourier-panel .eyebrow {
+  color: #0a7286;
+}
+
+.fourier-panel h1 {
+  color: #17212a;
+}
+
+.fourier-readout {
+  display: grid;
+  gap: 7px;
+}
+
+.fourier-readout code {
+  display: block;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(29, 58, 75, 0.13);
+  border-radius: 7px;
+  background: #f4f8fa;
+  color: #1c2a35;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.85rem;
+  font-weight: 760;
+  overflow-wrap: anywhere;
+}
+
+.fourier-readout span {
+  min-height: 18px;
+  color: #6c4a23;
+  font-size: 0.78rem;
+  font-weight: 780;
+}
+
+.fourier-control {
+  display: grid;
+  gap: 9px;
+  color: #283843;
+  font-size: 0.84rem;
+  font-weight: 840;
+}
+
+.fourier-control span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fourier-control output {
+  color: #536370;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.fourier-select {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  border: 1px solid rgba(29, 58, 75, 0.2);
+  border-radius: 7px;
+  background: #ffffff;
+  color: #1c2a35;
+  padding: 0 10px;
+  font: inherit;
+  font-weight: 760;
+}
+
+.fourier-select:focus-visible {
+  outline: 3px solid rgba(10, 114, 134, 0.22);
+  outline-offset: 2px;
+}
+
+.fourier-button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.fourier-secondary-button,
+.fourier-file-button,
+.fourier-playback {
+  display: inline-grid;
+  min-width: 0;
+  min-height: 40px;
+  place-items: center;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: 0.84rem;
+  font-weight: 840;
+  line-height: 1;
+  text-align: center;
+}
+
+.fourier-secondary-button,
+.fourier-file-button {
+  border: 1px solid rgba(10, 114, 134, 0.22);
+  background: #eef8fa;
+  color: #0d5969;
+}
+
+.fourier-secondary-button:hover,
+.fourier-file-button:hover {
+  background: #e2f2f5;
+}
+
+.fourier-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.fourier-file-input:focus-visible + .fourier-file-button {
+  outline: 3px solid rgba(10, 114, 134, 0.22);
+  outline-offset: 2px;
+}
+
+.fourier-slider {
+  width: 100%;
+  accent-color: #0a7286;
+}
+
+.fourier-playback {
+  background: #17212a;
+  color: #ffffff;
+}
+
+.fourier-playback:hover {
+  background: #263440;
+}
+
 .fractals-page {
   position: relative;
   min-height: calc(100vh - 40px);
@@ -1729,6 +1904,11 @@ input[type="text"]::placeholder {
     bottom: 16px;
   }
 
+  .fourier-panel {
+    right: 16px;
+    bottom: 16px;
+  }
+
   .lines-control-overlay {
     min-height: auto;
     padding: 232px 0 0;
@@ -1809,6 +1989,7 @@ input[type="text"]::placeholder {
 
   .page-host,
   .plotter-page,
+  .fourier-page,
   .fractals-page,
   .lines-page,
   .lines-stage,
@@ -1942,6 +2123,12 @@ input[type="text"]::placeholder {
     min-height: 560px;
   }
 
+  .fourier-canvas {
+    height: calc(100vh - 24px);
+    height: calc(100dvh - 24px);
+    min-height: 600px;
+  }
+
   .sierpinski-canvas {
     height: calc(100vh - 24px);
     height: calc(100dvh - 24px);
@@ -1950,6 +2137,13 @@ input[type="text"]::placeholder {
   }
 
   .fractal-panel {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100% - 24px);
+    padding: 14px;
+  }
+
+  .fourier-panel {
     right: 12px;
     bottom: 12px;
     width: calc(100% - 24px);
