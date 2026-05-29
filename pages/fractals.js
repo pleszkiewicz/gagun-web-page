@@ -237,7 +237,7 @@ function renderFractals(container, { t }) {
 
 window.gagunPageModules = window.gagunPageModules || [];
 window.gagunPageModules.push({
-  id: "fractals",
+  id: "julia-sets",
   sectionId: "fractals",
   navKey: "pages.fractals.navLabel",
   titleKey: "pages.fractals.title",

@@ -15,7 +15,7 @@ To add another page, create a new file in `pages/`, push a page module into `win
 
 ## Routing
 
-Pages use clean paths such as `/fractals`, `/periodic-table`, and `/lines` so analytics can report individual page URLs. The `_redirects` file keeps direct visits to those paths working on Cloudflare Pages by serving `index.html` for every route.
+Pages use clean paths such as `/julia-sets`, `/periodic-table`, and `/lines` so analytics can report individual page URLs. The `_redirects` file keeps direct visits to those paths working on Cloudflare Pages by serving `index.html` for every route.
 
 ## Analytics
 
