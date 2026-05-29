@@ -12,3 +12,17 @@ HTML web page created by Gagun
 - `pages/lines.js` registers the Lines game start screen with keyboard control groups.
 
 To add another page, create a new file in `pages/`, push a page module into `window.gagunPageModules`, add its translation keys to the locale files, and include the new script in `index.html` before `app.js`.
+
+## Analytics
+
+The site is prepared for Cloudflare Web Analytics through `analytics.js`.
+
+1. In Cloudflare, open Web Analytics and add this site's hostname.
+2. Copy the Web Analytics site token.
+3. Paste it into `index.html`:
+
+```html
+<script src="analytics.js" data-cloudflare-token="YOUR_TOKEN_HERE" defer></script>
+```
+
+The loader stays disabled until a token is provided, and it also skips localhost traffic.
