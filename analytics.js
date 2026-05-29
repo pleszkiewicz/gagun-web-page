@@ -3,7 +3,7 @@
   const token = currentScript?.dataset.cloudflareToken?.trim();
   const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
 
-  if (!token || localHosts.has(window.location.hostname)) {
+  if (!token || window.location.protocol === "file:" || localHosts.has(window.location.hostname)) {
     return;
   }
 

@@ -4,7 +4,7 @@ HTML web page created by Gagun
 ## Structure
 
 - `index.html` contains the application shell and the empty page host.
-- `app.js` owns navigation, hash routing, and localization helpers.
+- `app.js` owns navigation, path routing, and localization helpers.
 - `locales/en.js` contains English UI strings. Add another locale file with the same keys to translate the app.
 - `pages/plotter-2d.js` registers the `2D Plotter` page.
 - `pages/fractals.js` registers the animated black-and-white Julia sets page.
@@ -12,6 +12,10 @@ HTML web page created by Gagun
 - `pages/lines.js` registers the Lines game start screen with keyboard control groups.
 
 To add another page, create a new file in `pages/`, push a page module into `window.gagunPageModules`, add its translation keys to the locale files, and include the new script in `index.html` before `app.js`.
+
+## Routing
+
+Pages use clean paths such as `/fractals`, `/periodic-table`, and `/lines` so analytics can report individual page URLs. The `_redirects` file keeps direct visits to those paths working on Cloudflare Pages by serving `index.html` for every route.
 
 ## Analytics
 

@@ -103,17 +103,82 @@ function applyPageTheme(page) {
   });
 }
 
-function getHashPageId() {
+function getLegacyHashPageId() {
   const rawHash = window.location.hash.replace(/^#\/?/, "").trim();
   return rawHash ? decodeURIComponent(rawHash) : "";
 }
 
+function usesHashRouting() {
+  return window.location.protocol === "file:";
+}
+
+function getPagePath(page) {
+  if (usesHashRouting()) {
+    return `#${encodeURIComponent(page.id)}`;
+  }
+
+  return `/${encodeURIComponent(page.id)}`;
+}
+
+function getPathPageId() {
+  if (usesHashRouting()) {
+    return getLegacyHashPageId();
+  }
+
+  const pathSegments = window.location.pathname.split("/").filter(Boolean);
+  const rawPageId = pathSegments.at(-1) || "";
+
+  if (rawPageId === "index.html") {
+    return "";
+  }
+
+  return rawPageId ? decodeURIComponent(rawPageId) : "";
+}
+
+function migrateLegacyHashRoute() {
+  if (usesHashRouting()) {
+    return;
+  }
+
+  const legacyPageId = getLegacyHashPageId();
+  const page = pageModules.find((candidate) => candidate.id === legacyPageId);
+
+  if (page) {
+    history.replaceState({ pageId: page.id }, "", getPagePath(page));
+  }
+}
+
 function getActivePage() {
-  const hashPageId = getHashPageId();
-  if (!hashPageId) {
+  const pathPageId = getPathPageId();
+  if (!pathPageId) {
     return pageModules[0] || null;
   }
-  return pageModules.find((page) => page.id === hashPageId) || null;
+  return pageModules.find((page) => page.id === pathPageId) || null;
+}
+
+function navigateToPage(page) {
+  const nextPath = getPagePath(page);
+
+  if (usesHashRouting()) {
+    if (window.location.hash !== nextPath) {
+      window.location.hash = nextPath;
+      return;
+    }
+
+    renderActivePage();
+    return;
+  }
+
+  if (window.location.pathname !== nextPath || window.location.hash) {
+    history.pushState({ pageId: page.id }, "", nextPath);
+  }
+
+  renderActivePage();
+}
+
+function handleLegacyHashChange() {
+  migrateLegacyHashRoute();
+  renderActivePage();
 }
 
 function setNavigationInteractivity(isInteractive) {
@@ -166,7 +231,7 @@ function closeNavigation({ restoreFocus = true } = {}) {
 function createPageLink(page) {
   const link = document.createElement("a");
   link.className = "page-link";
-  link.href = `#${encodeURIComponent(page.id)}`;
+  link.href = getPagePath(page);
 
   const label = document.createElement("span");
   label.className = "page-link-label";
@@ -197,7 +262,22 @@ function createPageLink(page) {
     link.setAttribute("aria-current", "page");
   }
 
-  link.addEventListener("click", () => closeNavigation({ restoreFocus: false }));
+  link.addEventListener("click", (event) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    navigateToPage(page);
+    closeNavigation({ restoreFocus: false });
+  });
   return link;
 }
 
@@ -374,6 +454,7 @@ window.gagunApp = {
   t,
 };
 
+migrateLegacyHashRoute();
 applyStaticTranslations();
 renderActivePage();
 setNavigationInteractivity(false);
@@ -382,7 +463,8 @@ shell.menuToggle.addEventListener("click", openNavigation);
 shell.navClose.addEventListener("click", closeNavigation);
 shell.navScrim.addEventListener("click", () => closeNavigation());
 
-window.addEventListener("hashchange", renderActivePage);
+window.addEventListener("popstate", renderActivePage);
+window.addEventListener("hashchange", handleLegacyHashChange);
 
 desktopOnlyMediaQueries.forEach((query) => {
   query.addEventListener("change", renderActivePage);
