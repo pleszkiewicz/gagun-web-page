@@ -2,6 +2,16 @@ function renderLines(container, { t }) {
   const countdownDuration = 5000;
   const gameOverLockDuration = 2000;
   const playerSpeed = 118;
+  const dangerSampleInterval = 90;
+  const dangerDistances = {
+    wallWarning: 118,
+    wallCritical: 18,
+    trailWarning: 104,
+    trailCritical: 15,
+    proximityWarning: 38,
+    proximityCritical: 8,
+    ownTrailSkipSegments: 22,
+  };
   const directions = {
     up: { x: 0, y: -1 },
     right: { x: 1, y: 0 },
@@ -141,6 +151,7 @@ function renderLines(container, { t }) {
     width: 0,
     height: 0,
     dpr: 1,
+    lastDangerSampleAt: 0,
   };
 
   function getPlayerClass(player) {
@@ -263,6 +274,16 @@ function renderLines(container, { t }) {
   const gameOver = container.querySelector("#linesGameOver");
   const gameOverResults = container.querySelector("#linesGameOverResults");
   const gameOverHint = container.querySelector("#linesGameOverHint");
+  const audioEngine = window.createLinesAudioEngine
+    ? window.createLinesAudioEngine()
+    : {
+        startRound() {},
+        setDangerLevel() {},
+        playerEliminated() {},
+        finishRound() {},
+        stop() {},
+        dispose() {},
+      };
   const activeKeys = new Map(
     [...container.querySelectorAll(".lines-key[data-code]")].map((element) => [
       element.dataset.code,
@@ -424,6 +445,210 @@ function renderLines(container, { t }) {
     return firstDirection.x + secondDirection.x === 0 && firstDirection.y + secondDirection.y === 0;
   }
 
+  function getVectorDotProduct(firstVector, secondVector) {
+    return firstVector.x * secondVector.x + firstVector.y * secondVector.y;
+  }
+
+  function getVectorCrossProduct(firstVector, secondVector) {
+    return firstVector.x * secondVector.y - firstVector.y * secondVector.x;
+  }
+
+  function getPointToSegmentDistance(point, segmentStart, segmentEnd) {
+    const segment = {
+      x: segmentEnd.x - segmentStart.x,
+      y: segmentEnd.y - segmentStart.y,
+    };
+    const segmentLengthSquared = getVectorDotProduct(segment, segment);
+
+    if (segmentLengthSquared <= 0.001) {
+      return Math.hypot(point.x - segmentStart.x, point.y - segmentStart.y);
+    }
+
+    const pointOffset = {
+      x: point.x - segmentStart.x,
+      y: point.y - segmentStart.y,
+    };
+    const projection = Math.max(
+      0,
+      Math.min(1, getVectorDotProduct(pointOffset, segment) / segmentLengthSquared),
+    );
+    const closestPoint = {
+      x: segmentStart.x + segment.x * projection,
+      y: segmentStart.y + segment.y * projection,
+    };
+
+    return Math.hypot(point.x - closestPoint.x, point.y - closestPoint.y);
+  }
+
+  function getRaySegmentIntersectionDistance(origin, direction, segmentStart, segmentEnd) {
+    const segment = {
+      x: segmentEnd.x - segmentStart.x,
+      y: segmentEnd.y - segmentStart.y,
+    };
+    const startOffset = {
+      x: segmentStart.x - origin.x,
+      y: segmentStart.y - origin.y,
+    };
+    const denominator = getVectorCrossProduct(direction, segment);
+
+    if (Math.abs(denominator) <= 0.001) {
+      if (Math.abs(getVectorCrossProduct(startOffset, direction)) > 0.001) {
+        return Infinity;
+      }
+
+      const endOffset = {
+        x: segmentEnd.x - origin.x,
+        y: segmentEnd.y - origin.y,
+      };
+      const startProjection = getVectorDotProduct(startOffset, direction);
+      const endProjection = getVectorDotProduct(endOffset, direction);
+      const nearestProjection = Math.min(startProjection, endProjection);
+      const furthestProjection = Math.max(startProjection, endProjection);
+
+      return furthestProjection > 0.5 ? Math.max(0, nearestProjection) : Infinity;
+    }
+
+    const rayDistance = getVectorCrossProduct(startOffset, segment) / denominator;
+    const segmentProgress = getVectorCrossProduct(startOffset, direction) / denominator;
+
+    if (rayDistance > 0.5 && segmentProgress >= -0.001 && segmentProgress <= 1.001) {
+      return rayDistance;
+    }
+
+    return Infinity;
+  }
+
+  function shouldSkipDangerSegment(runner, trailRunner, segmentIndex) {
+    return (
+      runner === trailRunner &&
+      segmentIndex >= trailRunner.path.length - dangerDistances.ownTrailSkipSegments
+    );
+  }
+
+  function getBoundaryDistanceInDirection(runner) {
+    if (runner.direction.x > 0) return state.width - runner.x;
+    if (runner.direction.x < 0) return runner.x;
+    if (runner.direction.y > 0) return state.height - runner.y;
+    if (runner.direction.y < 0) return runner.y;
+
+    return Infinity;
+  }
+
+  function getBoundaryProximity(runner) {
+    return Math.min(runner.x, state.width - runner.x, runner.y, state.height - runner.y);
+  }
+
+  function getTrailDistanceInDirection(runner) {
+    const origin = { x: runner.x, y: runner.y };
+    let nearestDistance = Infinity;
+
+    state.runners.forEach((trailRunner) => {
+      for (let index = 1; index < trailRunner.path.length; index += 1) {
+        if (shouldSkipDangerSegment(runner, trailRunner, index)) {
+          continue;
+        }
+
+        const distance = getRaySegmentIntersectionDistance(
+          origin,
+          runner.direction,
+          trailRunner.path[index - 1],
+          trailRunner.path[index],
+        );
+
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+        }
+      }
+    });
+
+    return nearestDistance;
+  }
+
+  function getTrailProximity(runner) {
+    const head = { x: runner.x, y: runner.y };
+    let nearestDistance = Infinity;
+
+    state.runners.forEach((trailRunner) => {
+      for (let index = 1; index < trailRunner.path.length; index += 1) {
+        if (shouldSkipDangerSegment(runner, trailRunner, index)) {
+          continue;
+        }
+
+        const distance = getPointToSegmentDistance(
+          head,
+          trailRunner.path[index - 1],
+          trailRunner.path[index],
+        );
+
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+        }
+      }
+    });
+
+    return nearestDistance;
+  }
+
+  function getDangerScore(distance, warningDistance, criticalDistance) {
+    if (!Number.isFinite(distance)) {
+      return 0;
+    }
+
+    if (distance <= criticalDistance) {
+      return 1;
+    }
+
+    if (distance >= warningDistance) {
+      return 0;
+    }
+
+    const progress = (warningDistance - distance) / (warningDistance - criticalDistance);
+
+    return progress * progress * (3 - 2 * progress);
+  }
+
+  function getRunnerDanger(runner) {
+    if (!runner.alive || state.width <= 1 || state.height <= 1) {
+      return 0;
+    }
+
+    const forwardDanger = Math.max(
+      getDangerScore(
+        getBoundaryDistanceInDirection(runner),
+        dangerDistances.wallWarning,
+        dangerDistances.wallCritical,
+      ),
+      getDangerScore(
+        getTrailDistanceInDirection(runner),
+        dangerDistances.trailWarning,
+        dangerDistances.trailCritical,
+      ),
+    );
+    const proximityDanger = Math.max(
+      getDangerScore(
+        getBoundaryProximity(runner),
+        dangerDistances.proximityWarning,
+        dangerDistances.proximityCritical,
+      ),
+      getDangerScore(
+        getTrailProximity(runner),
+        dangerDistances.proximityWarning,
+        dangerDistances.proximityCritical,
+      ),
+    );
+
+    return Math.max(forwardDanger, proximityDanger * 0.72);
+  }
+
+  function updateAudioDanger(now) {
+    if (now - state.lastDangerSampleAt < dangerSampleInterval) {
+      return;
+    }
+
+    state.lastDangerSampleAt = now;
+    audioEngine.setDangerLevel(Math.max(0, ...state.runners.map(getRunnerDanger)));
+  }
+
   function formatSurvivalTime(seconds) {
     return seconds.toFixed(1);
   }
@@ -556,6 +781,7 @@ function renderLines(container, { t }) {
     gameOverHint.setAttribute("aria-hidden", "true");
     gameOverHint.textContent = t("pages.lines.gameOverDismiss");
     clearPressedKeys();
+    audioEngine.finishRound({ hasWinner: Boolean(winnerRunner) });
 
     playerCount.textContent = winnerText;
 
@@ -619,6 +845,10 @@ function renderLines(container, { t }) {
         doesMoveHitCurrentMoves(move, moves);
     });
 
+    const eliminatedRunners = moves
+      .filter((move) => move.crashed && move.runner.alive)
+      .map((move) => move.runner);
+
     moves.forEach((move) => {
       const { runner, to } = move;
 
@@ -629,6 +859,10 @@ function renderLines(container, { t }) {
       runner.alive = !move.crashed;
     });
 
+    if (eliminatedRunners.length > 0) {
+      audioEngine.playerEliminated(eliminatedRunners.map((runner) => runner.player.id));
+    }
+
     drawGame();
 
     if (state.runners.filter((runner) => runner.alive).length <= 1) {
@@ -636,6 +870,7 @@ function renderLines(container, { t }) {
       return;
     }
 
+    updateAudioDanger(now);
     state.animationId = window.requestAnimationFrame(animateGame);
   }
 
@@ -652,6 +887,7 @@ function renderLines(container, { t }) {
     state.gameOverTimeoutId = 0;
     state.canDismissGameOver = false;
     state.runners = [];
+    state.lastDangerSampleAt = 0;
     gameOver.hidden = true;
     gameOver.classList.remove("is-dismissible");
     gameOverResults.replaceChildren();
@@ -662,6 +898,7 @@ function renderLines(container, { t }) {
     stage.classList.remove("is-game-running");
     clearPressedKeys();
     ctx.clearRect(0, 0, state.width, state.height);
+    audioEngine.stop();
     updateRegistrationUi();
   }
 
@@ -679,6 +916,8 @@ function renderLines(container, { t }) {
     initialiseRunners();
     drawGame();
     state.lastFrameAt = 0;
+    state.lastDangerSampleAt = 0;
+    audioEngine.setDangerLevel(0);
     state.animationId = window.requestAnimationFrame(animateGame);
   }
 
@@ -699,6 +938,7 @@ function renderLines(container, { t }) {
     state.phase = "countdown";
     state.countdownStartedAt = performance.now();
     showCountdownTimer();
+    audioEngine.startRound();
     updateRegistrationUi();
     tickCountdown(state.countdownStartedAt);
   }
@@ -788,6 +1028,7 @@ function renderLines(container, { t }) {
     window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("keyup", handleKeyUp);
     window.removeEventListener("blur", clearPressedKeys);
+    audioEngine.dispose();
   };
 }
 
