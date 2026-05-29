@@ -429,6 +429,7 @@ function renderPlotter2D(container, { t }) {
       derivativeEvaluator: compiled.derivative.evaluate,
       derivativeError: compiled.derivative.error,
       showDerivative: false,
+      isVisible: true,
     });
 
     renderFunctionList();
@@ -441,6 +442,15 @@ function renderPlotter2D(container, { t }) {
     draw();
   }
 
+  function toggleFunctionVisibility(id) {
+    const fn = state.functions.find((item) => item.id === id);
+    if (!fn) return;
+
+    fn.isVisible = !fn.isVisible;
+    renderFunctionList();
+    draw();
+  }
+
   function renderFunctionList() {
     functionList.replaceChildren();
     functionCount.textContent = String(state.functions.length);
@@ -448,7 +458,13 @@ function renderPlotter2D(container, { t }) {
     state.functions.forEach((fn) => {
       const item = document.createElement("article");
       item.className = "function-item";
+      item.classList.toggle("is-hidden", !fn.isVisible);
       item.dataset.id = fn.id;
+      item.addEventListener("click", (event) => {
+        if (event.target.closest(".function-delete-button, .derivative-toggle-button")) return;
+
+        toggleFunctionVisibility(fn.id);
+      });
 
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
@@ -456,10 +472,22 @@ function renderPlotter2D(container, { t }) {
       deleteButton.textContent = "×";
       deleteButton.setAttribute("aria-label", t("pages.plotter2d.delete"));
       deleteButton.title = t("pages.plotter2d.delete");
-      deleteButton.addEventListener("click", () => deleteFunction(fn.id));
+      deleteButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        deleteFunction(fn.id);
+      });
 
       const title = document.createElement("div");
       title.className = "function-title";
+
+      const toggleButton = document.createElement("button");
+      toggleButton.type = "button";
+      toggleButton.className = "function-toggle-button";
+      toggleButton.setAttribute("aria-pressed", String(fn.isVisible));
+      toggleButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        toggleFunctionVisibility(fn.id);
+      });
 
       const name = document.createElement("div");
       name.className = "function-name";
@@ -483,20 +511,28 @@ function renderPlotter2D(container, { t }) {
       name.append(operatorLabel);
       name.append(expression);
 
-      title.append(name, deleteButton);
+      toggleButton.append(name);
+      title.append(toggleButton, deleteButton);
 
-      const derivativeInfo = document.createElement("button");
-      derivativeInfo.type = "button";
-      derivativeInfo.className = "derivative-expression derivative-toggle-button";
-      derivativeInfo.disabled = !fn.derivativeEvaluator;
+      const derivativeInfo = document.createElement("div");
+      derivativeInfo.className = "derivative-expression";
+      derivativeInfo.classList.toggle("is-active", fn.showDerivative);
       derivativeInfo.style.borderLeftColor = fn.color;
-      derivativeInfo.setAttribute("aria-pressed", String(fn.showDerivative));
-      derivativeInfo.setAttribute(
+
+      const derivativeToggleButton = document.createElement("button");
+      derivativeToggleButton.type = "button";
+      derivativeToggleButton.className = "derivative-toggle-button derivative-toggle-label";
+      derivativeToggleButton.disabled = !fn.derivativeEvaluator || !fn.isVisible;
+      derivativeToggleButton.setAttribute("aria-pressed", String(fn.showDerivative));
+      derivativeToggleButton.setAttribute(
         "aria-label",
         t("pages.plotter2d.toggleDerivative", { name: fn.name }),
       );
-      derivativeInfo.classList.toggle("is-active", fn.showDerivative);
-      derivativeInfo.addEventListener("click", () => {
+      derivativeToggleButton.classList.toggle("is-active", fn.showDerivative);
+      derivativeToggleButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (!fn.derivativeEvaluator || !fn.isVisible) return;
+
         fn.showDerivative = !fn.showDerivative;
         renderFunctionList();
         draw();
@@ -505,21 +541,19 @@ function renderPlotter2D(container, { t }) {
       const derivativeExpressionText = document.createElement("span");
       derivativeExpressionText.className = "derivative-expression-text";
 
-      const derivativeToggleLabel = document.createElement("span");
-      derivativeToggleLabel.className = "derivative-toggle-label";
-      derivativeToggleLabel.textContent = fn.showDerivative
+      derivativeToggleButton.textContent = fn.showDerivative
         ? t("pages.plotter2d.hideDerivativeAction")
         : t("pages.plotter2d.showDerivativeAction");
 
       if (fn.derivativeExpression) {
         derivativeExpressionText.textContent = `${fn.name}'(x) = ${fn.derivativeExpression}`;
-        derivativeInfo.append(derivativeExpressionText, derivativeToggleLabel);
+        derivativeInfo.append(derivativeExpressionText, derivativeToggleButton);
       } else {
         derivativeInfo.classList.add("is-unavailable");
         derivativeExpressionText.textContent =
           fn.derivativeError || t("pages.plotter2d.derivativeUnavailable");
-        derivativeToggleLabel.textContent = t("pages.plotter2d.derivativeUnavailableAction");
-        derivativeInfo.append(derivativeExpressionText, derivativeToggleLabel);
+        derivativeToggleButton.textContent = t("pages.plotter2d.derivativeUnavailableAction");
+        derivativeInfo.append(derivativeExpressionText, derivativeToggleButton);
       }
 
       item.append(title, derivativeInfo);
@@ -677,12 +711,16 @@ function renderPlotter2D(container, { t }) {
 
   function drawFunctions() {
     state.functions.forEach((fn) => {
+      if (!fn.isVisible) return;
+
       if (fn.fillDirection) {
         drawInequalityFill(fn.evaluator, fn.color, fn.fillDirection);
       }
     });
 
     state.functions.forEach((fn) => {
+      if (!fn.isVisible) return;
+
       drawFunctionGraph(fn.evaluator, fn.color, {
         dash: getFunctionLineDash(fn),
         lineWidth: 2.4,

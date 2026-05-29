@@ -801,6 +801,14 @@ input[type="text"]::placeholder {
   overflow-wrap: anywhere;
 }
 
+.derivative-expression.is-active {
+  color: #111111;
+}
+
+.function-item.is-hidden .derivative-expression {
+  color: #aeb7c5;
+}
+
 .derivative-toggle-button {
   cursor: pointer;
   transition:
@@ -836,12 +844,14 @@ input[type="text"]::placeholder {
   line-height: 1;
 }
 
+.derivative-toggle-button.derivative-toggle-label:hover:not(:disabled),
 .derivative-toggle-button:hover:not(:disabled) .derivative-toggle-label {
   border-color: #c8d0db;
   background: #edf0f4;
   color: #555f6d;
 }
 
+.derivative-toggle-button.derivative-toggle-label.is-active,
 .derivative-toggle-button.is-active .derivative-toggle-label {
   border-color: #d7dee8;
   background: #f3f5f8;
