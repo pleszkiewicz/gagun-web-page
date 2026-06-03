@@ -14,9 +14,9 @@ function renderFourierEpicycles(container, { t }) {
       createPoints: createDinoPoints,
     },
     {
-      id: "dragon",
-      labelKey: "pages.fourierEpicycles.shapes.dragon",
-      createPoints: createDragonPoints,
+      id: "pi",
+      labelKey: "pages.fourierEpicycles.shapes.pi",
+      createPoints: createPiPoints,
     },
     {
       id: "octopus",
@@ -203,55 +203,66 @@ function renderFourierEpicycles(container, { t }) {
     ];
   }
 
-  function createDragonPoints() {
-    return [
-      { x: -1.46, y: -0.2 },
-      { x: -1.28, y: -0.08 },
-      { x: -1.1, y: -0.01 },
-      { x: -0.95, y: 0.08 },
-      { x: -0.82, y: 0.02 },
-      { x: -0.72, y: 0.17 },
-      { x: -0.6, y: 0.09 },
-      { x: -0.45, y: 0.26 },
-      { x: -0.26, y: 0.28 },
-      { x: -0.1, y: 0.36 },
-      { x: -0.06, y: 0.77 },
-      { x: -0.22, y: 0.98 },
-      { x: 0.04, y: 0.87 },
-      { x: 0.33, y: 1.04 },
-      { x: 0.26, y: 0.74 },
-      { x: 0.49, y: 0.58 },
-      { x: 0.75, y: 0.73 },
-      { x: 0.64, y: 0.48 },
-      { x: 0.78, y: 0.42 },
-      { x: 0.9, y: 0.55 },
-      { x: 1.02, y: 0.45 },
-      { x: 0.93, y: 0.34 },
-      { x: 1.12, y: 0.31 },
-      { x: 1.31, y: 0.19 },
-      { x: 1.13, y: 0.12 },
-      { x: 1.28, y: 0.04 },
-      { x: 1.05, y: 0.0 },
-      { x: 0.93, y: -0.08 },
-      { x: 0.83, y: -0.2 },
-      { x: 0.94, y: -0.31 },
-      { x: 0.76, y: -0.28 },
-      { x: 0.65, y: -0.4 },
-      { x: 0.48, y: -0.28 },
-      { x: 0.3, y: -0.34 },
-      { x: 0.21, y: -0.53 },
-      { x: 0.33, y: -0.7 },
-      { x: 0.12, y: -0.66 },
-      { x: 0.0, y: -0.48 },
-      { x: -0.19, y: -0.43 },
-      { x: -0.36, y: -0.55 },
-      { x: -0.55, y: -0.52 },
-      { x: -0.43, y: -0.38 },
-      { x: -0.62, y: -0.32 },
-      { x: -0.82, y: -0.31 },
-      { x: -1.04, y: -0.37 },
-      { x: -1.26, y: -0.32 },
-    ];
+  function createPiPoints() {
+    const points = [];
+    let currentPoint = null;
+
+    const addPoint = (x, imageY) => {
+      currentPoint = {
+        x,
+        y: 200 - imageY,
+      };
+      points.push(currentPoint);
+    };
+    const lineTo = addPoint;
+    const cubicTo = (x1, y1, x2, y2, x, y, steps = 18) => {
+      const start = currentPoint;
+
+      for (let index = 1; index <= steps; index += 1) {
+        const t = index / steps;
+        const oneMinusT = 1 - t;
+        const startWeight = oneMinusT * oneMinusT * oneMinusT;
+        const firstControlWeight = 3 * oneMinusT * oneMinusT * t;
+        const secondControlWeight = 3 * oneMinusT * t * t;
+        const endWeight = t * t * t;
+
+        addPoint(
+          startWeight * start.x + firstControlWeight * x1 + secondControlWeight * x2 + endWeight * x,
+          startWeight * (200 - start.y) +
+            firstControlWeight * y1 +
+            secondControlWeight * y2 +
+            endWeight * y,
+        );
+      }
+    };
+
+    addPoint(7, 173);
+    cubicTo(9, 178, 24, 180, 38, 161);
+    cubicTo(50, 135, 68, 92, 88, 53, 24);
+    cubicTo(94, 50, 104, 49, 116, 49, 12);
+    lineTo(128, 49);
+    cubicTo(130, 49, 130, 51, 128, 52, 6);
+    lineTo(92, 138);
+    cubicTo(90, 153, 88, 167, 101, 176);
+    cubicTo(121, 185, 145, 167, 158, 132, 24);
+    cubicTo(162, 122, 154, 119, 148, 127, 14);
+    cubicTo(139, 143, 125, 150, 118, 133);
+    cubicTo(116, 128, 116, 123, 118, 120, 8);
+    lineTo(142, 60);
+    cubicTo(145, 53, 149, 50, 155, 50, 10);
+    lineTo(185, 50);
+    cubicTo(190, 50, 190, 45, 192, 39, 8);
+    lineTo(194, 24);
+    lineTo(79, 25);
+    cubicTo(61, 25, 51, 24, 39, 32);
+    cubicTo(27, 42, 18, 58, 15, 74);
+    cubicTo(27, 69, 39, 56, 52, 52);
+    cubicTo(60, 50, 69, 50, 74, 52, 10);
+    lineTo(45, 115);
+    cubicTo(38, 130, 24, 145, 8, 156);
+    cubicTo(2, 163, 3, 169, 7, 173, 12);
+
+    return points;
   }
 
   function createOctopusPoints() {

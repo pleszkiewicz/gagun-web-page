@@ -110,7 +110,7 @@ window.gagunLocales.en = {
       uploadFailed: "Image contour unavailable",
       shapes: {
         dino: "Detailed T-Rex",
-        dragon: "Dragon",
+        pi: "PI",
         octopus: "Octopus",
         optimusPrime: "Optimus Prime",
       },
