@@ -109,10 +109,10 @@ window.gagunLocales.en = {
       imageLoaded: "Image contour loaded",
       uploadFailed: "Image contour unavailable",
       shapes: {
-        dino: "Detailed T-Rex",
-        pi: "PI",
+        dino: "Dino",
         octopus: "Octopus",
         optimusPrime: "Optimus Prime",
+        pi: "PI",
       },
     },
     fractals: {
