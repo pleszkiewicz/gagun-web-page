@@ -112,7 +112,7 @@ window.gagunLocales.en = {
         dino: "Detailed T-Rex",
         dragon: "Dragon",
         octopus: "Octopus",
-        robot: "Robot",
+        optimusPrime: "Optimus Prime",
       },
     },
     fractals: {
