@@ -943,7 +943,7 @@ input[type="text"]::placeholder {
 
 .fourier-readout {
   display: grid;
-  gap: 7px;
+  gap: 5px;
 }
 
 .fourier-readout code {
@@ -961,10 +961,17 @@ input[type="text"]::placeholder {
 }
 
 .fourier-readout span {
-  min-height: 18px;
   color: #6c4a23;
   font-size: 0.78rem;
   font-weight: 780;
+}
+
+.fourier-readout span:empty {
+  display: none;
+}
+
+.fourier-readout + .fourier-control {
+  margin-top: -4px;
 }
 
 .fourier-control {
@@ -990,14 +997,19 @@ input[type="text"]::placeholder {
 }
 
 .fourier-select {
+  appearance: none;
   width: 100%;
   min-width: 0;
   height: 40px;
   border: 1px solid rgba(29, 58, 75, 0.2);
   border-radius: 7px;
-  background: #ffffff;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 14 14' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.5 5.25 7 8.75l3.5-3.5' fill='none' stroke='%23536370' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 14px center;
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
   color: #1c2a35;
-  padding: 0 10px;
+  padding: 0 38px 0 10px;
   font: inherit;
   font-weight: 760;
 }

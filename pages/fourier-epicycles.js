@@ -680,7 +680,6 @@ function renderFourierEpicycles(container, { t }) {
 
   function syncReadout() {
     readout.textContent = t("pages.fourierEpicycles.readout", {
-      count: state.epicycleCount,
       shape: state.shapeLabel,
     });
     epicycleValue.textContent = String(state.epicycleCount);
@@ -911,9 +910,8 @@ function renderFourierEpicycles(container, { t }) {
   function drawEpicycles(epicycleData, transform) {
     ctx.save();
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(29, 45, 58, 0.22)";
 
-    epicycleData.segments.forEach((segment) => {
+    epicycleData.segments.forEach((segment, index) => {
       const center = toScreen({ x: segment.startX, y: segment.startY }, transform);
       const radius = Math.abs(segment.radius * transform.scale);
 
@@ -923,6 +921,7 @@ function renderFourierEpicycles(container, { t }) {
 
       ctx.beginPath();
       ctx.arc(center.x, center.y, radius, 0, TAU);
+      ctx.strokeStyle = index === 0 ? "rgba(74, 100, 116, 0.14)" : "rgba(29, 45, 58, 0.22)";
       ctx.stroke();
     });
 
@@ -982,7 +981,7 @@ function renderFourierEpicycles(container, { t }) {
       const transform = getFitTransform(state.sourcePoints, area);
       const epicycleData = getEpicycleSegments(normalizePhase(state.phase), state.epicycleCount);
 
-      drawPath(state.sourcePoints, transform, "rgba(48, 71, 86, 0.17)", 2);
+      drawPath(state.sourcePoints, transform, "rgba(48, 71, 86, 0.24)", 2);
       drawTrace(transform, epicycleData.point);
       drawEpicycles(epicycleData, transform);
     }

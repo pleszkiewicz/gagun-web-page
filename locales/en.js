@@ -96,7 +96,7 @@ window.gagunLocales.en = {
       panelLabel: "Fourier epicycles controls",
       eyebrow: "Fourier Series",
       heading: "Fourier Epicycles",
-      readout: "{count} epicycles - {shape}",
+      readout: "{shape}",
       shapeLabel: "Shape",
       randomShape: "Random",
       uploadImage: "Upload image",
