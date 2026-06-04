@@ -128,6 +128,37 @@ window.gagunLocales.en = {
       pause: "Pause",
       resume: "Resume",
     },
+    reactionDiffusion: {
+      navLabel: "Reaction-Diffusion",
+      title: "Reaction-Diffusion",
+      pageLabel: "Animated black and white reaction-diffusion simulation",
+      canvasLabel: "Animated black and white reaction-diffusion pattern",
+      panelLabel: "Reaction-diffusion controls",
+      eyebrow: "Simulation",
+      heading: "Reaction-Diffusion",
+      parametersLabel: "Reaction-diffusion parameters",
+      feed: "Feed",
+      feedTooltip:
+        "Adds fresh material to the simulation. Higher values make the pattern grow faster and often split into smaller cells.",
+      kill: "Kill",
+      killTooltip:
+        "Removes the reacting material. Higher values thin the white bands and can make the pattern break apart.",
+      diffusionB: "Diffusion B",
+      diffusionBTooltip:
+        "Controls how far the second chemical spreads. Higher values create softer, wider bands.",
+      speed: "Speed",
+      speedTooltip: "Runs more simulation steps per frame. Higher values animate faster.",
+      resolution: "Resolution",
+      resolutionTooltip:
+        "Changes simulation detail. Higher values look sharper but need more processing.",
+      threshold: "Threshold",
+      thresholdTooltip:
+        "Sets the black-white cutoff. Move it to change band thickness and contrast.",
+      tooltipButton: "Show {parameter} hint",
+      reseed: "Reseed",
+      pause: "Pause",
+      resume: "Resume",
+    },
     barnsleyFern: {
       navLabel: "Barnsley Fern",
       title: "Barnsley Fern",

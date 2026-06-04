@@ -1186,6 +1186,171 @@ input[type="text"]::placeholder {
   background: #2b2b2b;
 }
 
+.reaction-page {
+  border-color: rgba(0, 0, 0, 0.48);
+  background: #050505;
+}
+
+.reaction-canvas {
+  height: calc(100vh - 40px);
+  height: calc(100dvh - 40px);
+  min-height: min(620px, calc(100vh - 40px));
+  min-height: min(620px, calc(100dvh - 40px));
+  background: #050505;
+}
+
+.reaction-panel {
+  width: min(352px, calc(100% - 40px));
+  border-color: rgba(0, 0, 0, 0.22);
+  background: rgba(255, 255, 255, 0.91);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.reaction-panel .eyebrow {
+  color: #111111;
+}
+
+.reaction-panel h1 {
+  color: #050505;
+  font-size: 1.72rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.reaction-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.reaction-control {
+  position: relative;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.11);
+}
+
+.reaction-control-header {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, max-content) auto minmax(48px, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.reaction-control-header label {
+  min-width: 0;
+}
+
+.reaction-control-header output {
+  justify-self: end;
+}
+
+.reaction-help {
+  display: inline-grid;
+  width: 19px;
+  height: 19px;
+  place-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.28);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #111111;
+  padding: 0;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.reaction-help:hover,
+.reaction-help:focus-visible,
+.reaction-help.is-tooltip-visible {
+  background: #111111;
+  color: #ffffff;
+}
+
+.reaction-tooltip {
+  position: absolute;
+  z-index: 4;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: min(265px, calc(100vw - 72px));
+  padding: 9px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 7px;
+  background: rgba(17, 17, 17, 0.96);
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 720;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.reaction-tooltip::after {
+  content: "";
+  position: absolute;
+  right: 42px;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  background: rgba(17, 17, 17, 0.96);
+  transform: rotate(45deg);
+}
+
+.reaction-help:hover + output + .reaction-tooltip,
+.reaction-help:focus-visible + output + .reaction-tooltip,
+.reaction-help.is-tooltip-visible + output + .reaction-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reaction-slider {
+  width: 100%;
+  accent-color: #111111;
+}
+
+.reaction-button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.reaction-reset,
+.reaction-playback {
+  display: inline-grid;
+  min-width: 0;
+  min-height: 40px;
+  place-items: center;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: 0.84rem;
+  font-weight: 840;
+  line-height: 1;
+  text-align: center;
+}
+
+.reaction-reset {
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: #eeeeee;
+  color: #111111;
+}
+
+.reaction-reset:hover {
+  background: #e1e1e1;
+}
+
+.reaction-playback {
+  background: #111111;
+  color: #ffffff;
+}
+
+.reaction-playback:hover {
+  background: #2b2b2b;
+}
+
 .barnsley-page {
   border-color: rgba(73, 118, 54, 0.28);
   background: #f4faee;
@@ -2142,6 +2307,13 @@ input[type="text"]::placeholder {
   }
 
   .sierpinski-canvas {
+    height: calc(100vh - 24px);
+    height: calc(100dvh - 24px);
+    min-height: min(560px, calc(100vh - 24px));
+    min-height: min(560px, calc(100dvh - 24px));
+  }
+
+  .reaction-canvas {
     height: calc(100vh - 24px);
     height: calc(100dvh - 24px);
     min-height: min(560px, calc(100vh - 24px));
