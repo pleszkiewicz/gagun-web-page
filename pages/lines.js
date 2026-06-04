@@ -2,6 +2,13 @@ function renderLines(container, { t }) {
   const countdownDuration = 5000;
   const gameOverLockDuration = 2000;
   const playerSpeed = 118;
+  const trailWidth = 3;
+  const headRadius = 5.5;
+  const laserWidth = 4;
+  const laserDuration = 40;
+  const laserEraseStartOffset = laserWidth;
+  const blockadeLength = 20;
+  const geometryEpsilon = 0.001;
   const dangerSampleInterval = 90;
   const dangerDistances = {
     wallWarning: 118,
@@ -148,6 +155,8 @@ function renderLines(container, { t }) {
     gameOverTimeoutId: 0,
     canDismissGameOver: false,
     runners: [],
+    blockades: [],
+    laserBursts: [],
     width: 0,
     height: 0,
     dpr: 1,
@@ -383,8 +392,15 @@ function renderLines(container, { t }) {
 
   function isSamePoint(firstPoint, secondPoint) {
     return (
-      Math.abs(firstPoint.x - secondPoint.x) < 0.001 &&
-      Math.abs(firstPoint.y - secondPoint.y) < 0.001
+      Math.abs(firstPoint.x - secondPoint.x) < geometryEpsilon &&
+      Math.abs(firstPoint.y - secondPoint.y) < geometryEpsilon
+    );
+  }
+
+  function isSameDirection(firstDirection, secondDirection) {
+    return (
+      firstDirection.x === secondDirection.x &&
+      firstDirection.y === secondDirection.y
     );
   }
 
@@ -398,15 +414,15 @@ function renderLines(container, { t }) {
   function isPointOnSegment(point, segmentStart, segmentEnd) {
     const crossProduct = getSegmentCrossProduct(segmentStart, segmentEnd, point);
 
-    if (Math.abs(crossProduct) > 0.001) {
+    if (Math.abs(crossProduct) > geometryEpsilon) {
       return false;
     }
 
     return (
-      point.x >= Math.min(segmentStart.x, segmentEnd.x) - 0.001 &&
-      point.x <= Math.max(segmentStart.x, segmentEnd.x) + 0.001 &&
-      point.y >= Math.min(segmentStart.y, segmentEnd.y) - 0.001 &&
-      point.y <= Math.max(segmentStart.y, segmentEnd.y) + 0.001
+      point.x >= Math.min(segmentStart.x, segmentEnd.x) - geometryEpsilon &&
+      point.x <= Math.max(segmentStart.x, segmentEnd.x) + geometryEpsilon &&
+      point.y >= Math.min(segmentStart.y, segmentEnd.y) - geometryEpsilon &&
+      point.y <= Math.max(segmentStart.y, segmentEnd.y) + geometryEpsilon
     );
   }
 
@@ -416,7 +432,10 @@ function renderLines(container, { t }) {
     const secondTurnStart = getSegmentCrossProduct(secondStart, secondEnd, firstStart);
     const secondTurnEnd = getSegmentCrossProduct(secondStart, secondEnd, firstEnd);
 
-    if (firstTurnStart * firstTurnEnd < -0.001 && secondTurnStart * secondTurnEnd < -0.001) {
+    if (
+      firstTurnStart * firstTurnEnd < -geometryEpsilon &&
+      secondTurnStart * secondTurnEnd < -geometryEpsilon
+    ) {
       return true;
     }
 
@@ -460,7 +479,7 @@ function renderLines(container, { t }) {
     };
     const segmentLengthSquared = getVectorDotProduct(segment, segment);
 
-    if (segmentLengthSquared <= 0.001) {
+    if (segmentLengthSquared <= geometryEpsilon) {
       return Math.hypot(point.x - segmentStart.x, point.y - segmentStart.y);
     }
 
@@ -491,8 +510,8 @@ function renderLines(container, { t }) {
     };
     const denominator = getVectorCrossProduct(direction, segment);
 
-    if (Math.abs(denominator) <= 0.001) {
-      if (Math.abs(getVectorCrossProduct(startOffset, direction)) > 0.001) {
+    if (Math.abs(denominator) <= geometryEpsilon) {
+      if (Math.abs(getVectorCrossProduct(startOffset, direction)) > geometryEpsilon) {
         return Infinity;
       }
 
@@ -511,17 +530,197 @@ function renderLines(container, { t }) {
     const rayDistance = getVectorCrossProduct(startOffset, segment) / denominator;
     const segmentProgress = getVectorCrossProduct(startOffset, direction) / denominator;
 
-    if (rayDistance > 0.5 && segmentProgress >= -0.001 && segmentProgress <= 1.001) {
+    if (
+      rayDistance > 0.5 &&
+      segmentProgress >= -geometryEpsilon &&
+      segmentProgress <= 1 + geometryEpsilon
+    ) {
       return rayDistance;
     }
 
     return Infinity;
   }
 
-  function shouldSkipDangerSegment(runner, trailRunner, segmentIndex) {
+  function getLaserEndPoint(origin, direction) {
+    if (direction.x > 0) return { x: state.width, y: origin.y };
+    if (direction.x < 0) return { x: 0, y: origin.y };
+    if (direction.y > 0) return { x: origin.x, y: state.height };
+    if (direction.y < 0) return { x: origin.x, y: 0 };
+
+    return { ...origin };
+  }
+
+  function getLaserBounds(startPoint, direction, width) {
+    const halfWidth = width / 2;
+
+    if (direction.x !== 0) {
+      const endX = direction.x > 0 ? state.width : 0;
+
+      return {
+        minX: Math.min(startPoint.x, endX),
+        maxX: Math.max(startPoint.x, endX),
+        minY: startPoint.y - halfWidth,
+        maxY: startPoint.y + halfWidth,
+      };
+    }
+
+    const endY = direction.y > 0 ? state.height : 0;
+
+    return {
+      minX: startPoint.x - halfWidth,
+      maxX: startPoint.x + halfWidth,
+      minY: Math.min(startPoint.y, endY),
+      maxY: Math.max(startPoint.y, endY),
+    };
+  }
+
+  function createLaserBeam(runner) {
+    const origin = { x: runner.x, y: runner.y };
+    const eraseStart = clampToCanvas({
+      x: origin.x + runner.direction.x * laserEraseStartOffset,
+      y: origin.y + runner.direction.y * laserEraseStartOffset,
+    });
+
+    return {
+      origin,
+      visualEnd: getLaserEndPoint(origin, runner.direction),
+      bounds: getLaserBounds(eraseStart, runner.direction, laserWidth),
+      direction: { ...runner.direction },
+      width: laserWidth,
+    };
+  }
+
+  function doesLaserTouchRunnerHead(beam, runner) {
+    const headOffset = {
+      x: runner.x - beam.origin.x,
+      y: runner.y - beam.origin.y,
+    };
+    const forwardDistance = getVectorDotProduct(headOffset, beam.direction);
+    const beamLength = getVectorDotProduct(
+      {
+        x: beam.visualEnd.x - beam.origin.x,
+        y: beam.visualEnd.y - beam.origin.y,
+      },
+      beam.direction,
+    );
+    const sideDistance = Math.abs(getVectorCrossProduct(headOffset, beam.direction));
+
+    return (
+      forwardDistance > geometryEpsilon &&
+      forwardDistance <= beamLength + headRadius &&
+      sideDistance <= beam.width / 2 + headRadius
+    );
+  }
+
+  function clipSegmentWithLaser(segmentStart, segmentEnd, laserBounds) {
+    const isHorizontal = Math.abs(segmentStart.y - segmentEnd.y) < geometryEpsilon;
+    const isVertical = Math.abs(segmentStart.x - segmentEnd.x) < geometryEpsilon;
+
+    if (!isHorizontal && !isVertical) {
+      return [{ from: segmentStart, to: segmentEnd }];
+    }
+
+    const axis = isHorizontal ? "x" : "y";
+    const crossAxis = isHorizontal ? "y" : "x";
+    const crossMin = isHorizontal ? laserBounds.minY : laserBounds.minX;
+    const crossMax = isHorizontal ? laserBounds.maxY : laserBounds.maxX;
+    const axisMin = isHorizontal ? laserBounds.minX : laserBounds.minY;
+    const axisMax = isHorizontal ? laserBounds.maxX : laserBounds.maxY;
+    const crossValue = segmentStart[crossAxis];
+
+    if (crossValue < crossMin - geometryEpsilon || crossValue > crossMax + geometryEpsilon) {
+      return [{ from: segmentStart, to: segmentEnd }];
+    }
+
+    const segmentAxisStart = segmentStart[axis];
+    const segmentAxisEnd = segmentEnd[axis];
+    const segmentMin = Math.min(segmentAxisStart, segmentAxisEnd);
+    const segmentMax = Math.max(segmentAxisStart, segmentAxisEnd);
+    const eraseMin = Math.max(segmentMin, axisMin);
+    const eraseMax = Math.min(segmentMax, axisMax);
+
+    if (eraseMax - eraseMin <= geometryEpsilon) {
+      return [{ from: segmentStart, to: segmentEnd }];
+    }
+
+    const movesForward = segmentAxisEnd >= segmentAxisStart;
+    const firstCut = movesForward ? eraseMin : eraseMax;
+    const secondCut = movesForward ? eraseMax : eraseMin;
+    const makePoint = (axisValue) =>
+      isHorizontal
+        ? { x: axisValue, y: segmentStart.y }
+        : { x: segmentStart.x, y: axisValue };
+    const pieces = [];
+
+    if (Math.abs(segmentAxisStart - firstCut) > geometryEpsilon) {
+      pieces.push({ from: segmentStart, to: makePoint(firstCut) });
+    }
+
+    if (Math.abs(segmentAxisEnd - secondCut) > geometryEpsilon) {
+      pieces.push({ from: makePoint(secondCut), to: segmentEnd });
+    }
+
+    return pieces;
+  }
+
+  function appendTrailSegment(trails, from, to) {
+    if (isSamePoint(from, to)) {
+      return;
+    }
+
+    const previousTrail = trails[trails.length - 1];
+
+    if (previousTrail && isSamePoint(previousTrail[previousTrail.length - 1], from)) {
+      previousTrail.push(to);
+      return;
+    }
+
+    trails.push([from, to]);
+  }
+
+  function rebuildRunnerTrailsAfterLaser(runner, laserBounds) {
+    const nextTrails = [];
+
+    runner.trails.forEach((trail) => {
+      for (let index = 1; index < trail.length; index += 1) {
+        clipSegmentWithLaser(trail[index - 1], trail[index], laserBounds).forEach((segment) => {
+          appendTrailSegment(nextTrails, segment.from, segment.to);
+        });
+      }
+    });
+
+    const head = { x: runner.x, y: runner.y };
+    const activeTrail = nextTrails.find((trail) => isSamePoint(trail[trail.length - 1], head));
+
+    runner.activeTrail = activeTrail || [head];
+
+    if (!activeTrail) {
+      nextTrails.push(runner.activeTrail);
+    }
+
+    runner.trails = nextTrails;
+  }
+
+  function rebuildBlockadesAfterLaser(laserBounds) {
+    state.blockades = state.blockades.flatMap((blockade) =>
+      clipSegmentWithLaser(blockade.from, blockade.to, laserBounds).map((segment) => ({
+        ...blockade,
+        from: segment.from,
+        to: segment.to,
+      })),
+    );
+  }
+
+  function eraseBoardWithLaser(laserBounds) {
+    state.runners.forEach((runner) => rebuildRunnerTrailsAfterLaser(runner, laserBounds));
+    rebuildBlockadesAfterLaser(laserBounds);
+  }
+
+  function shouldSkipDangerSegment(runner, trailRunner, trail, segmentIndex) {
     return (
       runner === trailRunner &&
-      segmentIndex >= trailRunner.path.length - dangerDistances.ownTrailSkipSegments
+      trail === trailRunner.activeTrail &&
+      segmentIndex >= trail.length - dangerDistances.ownTrailSkipSegments
     );
   }
 
@@ -543,21 +742,36 @@ function renderLines(container, { t }) {
     let nearestDistance = Infinity;
 
     state.runners.forEach((trailRunner) => {
-      for (let index = 1; index < trailRunner.path.length; index += 1) {
-        if (shouldSkipDangerSegment(runner, trailRunner, index)) {
-          continue;
-        }
+      trailRunner.trails.forEach((trail) => {
+        for (let index = 1; index < trail.length; index += 1) {
+          if (shouldSkipDangerSegment(runner, trailRunner, trail, index)) {
+            continue;
+          }
 
-        const distance = getRaySegmentIntersectionDistance(
-          origin,
-          runner.direction,
-          trailRunner.path[index - 1],
-          trailRunner.path[index],
-        );
+          const distance = getRaySegmentIntersectionDistance(
+            origin,
+            runner.direction,
+            trail[index - 1],
+            trail[index],
+          );
 
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+          }
         }
+      });
+    });
+
+    state.blockades.forEach((blockade) => {
+      const distance = getRaySegmentIntersectionDistance(
+        origin,
+        runner.direction,
+        blockade.from,
+        blockade.to,
+      );
+
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
       }
     });
 
@@ -569,20 +783,26 @@ function renderLines(container, { t }) {
     let nearestDistance = Infinity;
 
     state.runners.forEach((trailRunner) => {
-      for (let index = 1; index < trailRunner.path.length; index += 1) {
-        if (shouldSkipDangerSegment(runner, trailRunner, index)) {
-          continue;
-        }
+      trailRunner.trails.forEach((trail) => {
+        for (let index = 1; index < trail.length; index += 1) {
+          if (shouldSkipDangerSegment(runner, trailRunner, trail, index)) {
+            continue;
+          }
 
-        const distance = getPointToSegmentDistance(
-          head,
-          trailRunner.path[index - 1],
-          trailRunner.path[index],
-        );
+          const distance = getPointToSegmentDistance(head, trail[index - 1], trail[index]);
 
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+          }
         }
+      });
+    });
+
+    state.blockades.forEach((blockade) => {
+      const distance = getPointToSegmentDistance(head, blockade.from, blockade.to);
+
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
       }
     });
 
@@ -656,8 +876,11 @@ function renderLines(container, { t }) {
   function initialiseRunners() {
     const margin = Math.max(30, Math.min(76, Math.min(state.width, state.height) * 0.08));
 
+    state.blockades = [];
+    state.laserBursts = [];
     state.runners = getRegisteredPlayers().map((player) => {
       const start = player.getStart(state.width, state.height, margin);
+      const initialTrail = [start];
 
       return {
         player,
@@ -665,54 +888,136 @@ function renderLines(container, { t }) {
         queuedDirection: null,
         alive: true,
         survivalTime: 0,
+        hasTurned: false,
+        hasShot: false,
+        hasBlocked: false,
         x: start.x,
         y: start.y,
-        path: [start],
+        trails: [initialTrail],
+        activeTrail: initialTrail,
       };
     });
   }
 
-  function drawGame() {
+  function drawTrail(trail, color, width = trailWidth) {
+    if (trail.length < 2) {
+      return;
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+
+    trail.forEach((point, index) => {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.lineTo(point.x, point.y);
+      }
+    });
+
+    ctx.stroke();
+  }
+
+  function drawLaserBursts(now) {
+    state.laserBursts = state.laserBursts.filter((laser) => now - laser.createdAt < laser.duration);
+
+    state.laserBursts.forEach((laser) => {
+      const progress = 1 - (now - laser.createdAt) / laser.duration;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, progress);
+      ctx.strokeStyle = laser.color;
+      ctx.lineCap = "round";
+      ctx.shadowColor = laser.color;
+      ctx.shadowBlur = 14;
+      ctx.lineWidth = laser.width;
+      ctx.beginPath();
+      ctx.moveTo(laser.from.x, laser.from.y);
+      ctx.lineTo(laser.to.x, laser.to.y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = Math.max(0.35, progress);
+      ctx.lineWidth = 0.5 * laser.width;
+      ctx.beginPath();
+      ctx.moveTo(laser.from.x, laser.from.y);
+      ctx.lineTo(laser.to.x, laser.to.y);
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  function drawGame(now = performance.now()) {
     ctx.clearRect(0, 0, state.width, state.height);
 
     state.runners.forEach((runner) => {
-      ctx.strokeStyle = runner.player.color;
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.beginPath();
+      runner.trails.forEach((trail) => drawTrail(trail, runner.player.color));
+    });
 
-      runner.path.forEach((point, index) => {
-        if (index === 0) {
-          ctx.moveTo(point.x, point.y);
-        } else {
-          ctx.lineTo(point.x, point.y);
-        }
-      });
+    state.blockades.forEach((blockade) => {
+      drawTrail([blockade.from, blockade.to], blockade.color);
+    });
 
-      ctx.stroke();
+    drawLaserBursts(now);
+
+    state.runners.forEach((runner) => {
       ctx.fillStyle = runner.player.color;
       ctx.beginPath();
-      ctx.arc(runner.x, runner.y, 5.5, 0, Math.PI * 2);
+      ctx.arc(runner.x, runner.y, headRadius, 0, Math.PI * 2);
       ctx.fill();
     });
   }
 
+  function appendRunnerMove(runner, from, to) {
+    if (
+      !runner.activeTrail ||
+      !isSamePoint(runner.activeTrail[runner.activeTrail.length - 1], from)
+    ) {
+      runner.activeTrail = [from];
+      runner.trails.push(runner.activeTrail);
+    }
+
+    if (!isSamePoint(from, to)) {
+      runner.activeTrail.push(to);
+    }
+  }
+
   function doesMoveHitTrail(runner, from, to) {
-    return state.runners.some((trailRunner) => {
-      for (let index = 1; index < trailRunner.path.length; index += 1) {
-        const isOwnRecentSegment = trailRunner === runner && index >= trailRunner.path.length - 1;
+    const move = { runner, from, to };
+    const hitTrail = state.runners.some((trailRunner) => {
+      for (const trail of trailRunner.trails) {
+        for (let index = 1; index < trail.length; index += 1) {
+          const isOwnRecentSegment =
+            trailRunner === runner && trail === runner.activeTrail && index >= trail.length - 1;
 
-        if (isOwnRecentSegment) {
-          continue;
-        }
+          if (isOwnRecentSegment) {
+            continue;
+          }
 
-        if (doSegmentsIntersect(from, to, trailRunner.path[index - 1], trailRunner.path[index])) {
-          return true;
+          if (doSegmentsIntersect(from, to, trail[index - 1], trail[index])) {
+            return true;
+          }
         }
       }
 
       return false;
+    });
+
+    if (hitTrail) {
+      return true;
+    }
+
+    return state.blockades.some((blockade) => {
+      if (
+        blockade.runner === runner &&
+        isIntersectionOnlyAtMoveStart(move, { from: blockade.from, to: blockade.to })
+      ) {
+        return false;
+      }
+
+      return doSegmentsIntersect(from, to, blockade.from, blockade.to);
     });
   }
 
@@ -728,6 +1033,92 @@ function renderLines(container, { t }) {
 
       return !isIntersectionOnlyAtMoveStart(move, otherMove);
     });
+  }
+
+  function finishGameIfOnlyOneRunnerLeft() {
+    if (state.runners.filter((runner) => runner.alive).length <= 1) {
+      finishGame();
+      return true;
+    }
+
+    return false;
+  }
+
+  function fireLaser(runner) {
+    if (!runner.alive || runner.hasShot || !runner.hasTurned) {
+      return false;
+    }
+
+    runner.hasShot = true;
+
+    const now = performance.now();
+    const beam = createLaserBeam(runner);
+    const eliminatedRunners = [];
+
+    state.laserBursts.push({
+      from: beam.origin,
+      to: beam.visualEnd,
+      color: runner.player.color,
+      width: beam.width,
+      createdAt: now,
+      duration: laserDuration,
+    });
+
+    eraseBoardWithLaser(beam.bounds);
+
+    state.runners.forEach((targetRunner) => {
+      if (
+        targetRunner !== runner &&
+        targetRunner.alive &&
+        doesLaserTouchRunnerHead(beam, targetRunner)
+      ) {
+        targetRunner.alive = false;
+        eliminatedRunners.push(targetRunner);
+      }
+    });
+
+    if (eliminatedRunners.length > 0) {
+      audioEngine.playerEliminated(eliminatedRunners.map((targetRunner) => targetRunner.player.id));
+    }
+
+    drawGame(now);
+    finishGameIfOnlyOneRunnerLeft();
+    return true;
+  }
+
+  function placeBlockade(runner) {
+    if (!runner.alive || runner.hasBlocked) {
+      return false;
+    }
+
+    const perpendicular = {
+      x: -runner.direction.y,
+      y: runner.direction.x,
+    };
+    const center = { x: runner.x, y: runner.y };
+    const halfLength = blockadeLength / 2;
+    const from = clampToCanvas({
+      x: center.x - perpendicular.x * halfLength,
+      y: center.y - perpendicular.y * halfLength,
+    });
+    const to = clampToCanvas({
+      x: center.x + perpendicular.x * halfLength,
+      y: center.y + perpendicular.y * halfLength,
+    });
+
+    if (isSamePoint(from, to)) {
+      return false;
+    }
+
+    runner.hasBlocked = true;
+    state.blockades.push({
+      runner,
+      color: runner.player.color,
+      from,
+      to,
+    });
+    drawGame();
+    return true;
   }
 
   function renderGameOverResults(winnerRunner) {
@@ -815,6 +1206,10 @@ function renderLines(container, { t }) {
       .filter((runner) => runner.alive)
       .map((runner) => {
         if (runner.queuedDirection) {
+          if (!isSameDirection(runner.direction, runner.queuedDirection)) {
+            runner.hasTurned = true;
+          }
+
           runner.direction = runner.queuedDirection;
           runner.queuedDirection = null;
         }
@@ -855,7 +1250,7 @@ function renderLines(container, { t }) {
       runner.x = to.x;
       runner.y = to.y;
       runner.survivalTime += elapsed;
-      runner.path.push(to);
+      appendRunnerMove(runner, move.from, to);
       runner.alive = !move.crashed;
     });
 
@@ -863,12 +1258,9 @@ function renderLines(container, { t }) {
       audioEngine.playerEliminated(eliminatedRunners.map((runner) => runner.player.id));
     }
 
-    drawGame();
+    drawGame(now);
 
-    if (state.runners.filter((runner) => runner.alive).length <= 1) {
-      finishGame();
-      return;
-    }
+    if (finishGameIfOnlyOneRunnerLeft()) return;
 
     updateAudioDanger(now);
     state.animationId = window.requestAnimationFrame(animateGame);
@@ -887,6 +1279,8 @@ function renderLines(container, { t }) {
     state.gameOverTimeoutId = 0;
     state.canDismissGameOver = false;
     state.runners = [];
+    state.blockades = [];
+    state.laserBursts = [];
     state.lastDangerSampleAt = 0;
     gameOver.hidden = true;
     gameOver.classList.remove("is-dismissible");
@@ -960,16 +1354,51 @@ function renderLines(container, { t }) {
     }
   }
 
+  function getRunnerForPlayer(player) {
+    return state.runners.find((currentRunner) => currentRunner.player.id === player.id);
+  }
+
   function queuePlayerDirection(player, direction) {
     if (state.phase !== "running") return;
 
-    const runner = state.runners.find((currentRunner) => currentRunner.player.id === player.id);
+    const runner = getRunnerForPlayer(player);
 
-    if (!runner || !runner.alive || isOppositeDirection(runner.direction, direction)) {
+    if (
+      !runner ||
+      !runner.alive ||
+      isSameDirection(runner.direction, direction) ||
+      isOppositeDirection(runner.direction, direction)
+    ) {
       return;
     }
 
     runner.queuedDirection = direction;
+  }
+
+  function handleRunningControl(player, direction, event) {
+    const runner = getRunnerForPlayer(player);
+
+    if (!runner || !runner.alive) {
+      return;
+    }
+
+    if (isSameDirection(runner.direction, direction)) {
+      if (!event.repeat) {
+        fireLaser(runner);
+      }
+
+      return;
+    }
+
+    if (isOppositeDirection(runner.direction, direction)) {
+      if (!event.repeat) {
+        placeBlockade(runner);
+      }
+
+      return;
+    }
+
+    queuePlayerDirection(player, direction);
   }
 
   function setPressedKey(event, isPressed) {
@@ -985,8 +1414,11 @@ function renderLines(container, { t }) {
     }
 
     if (isPressed) {
-      queuePlayerDirection(control.player, control.direction);
-      registerPlayer(control.player);
+      if (state.phase === "running") {
+        handleRunningControl(control.player, control.direction, event);
+      } else {
+        registerPlayer(control.player);
+      }
     }
   }
 
