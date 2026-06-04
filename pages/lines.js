@@ -239,13 +239,16 @@ function renderLines(container, { t }) {
                   ${keyboardRows.map(renderKeyboardRow).join("")}
                 </div>
 
-                <div class="lines-arrow-cluster" aria-hidden="true">
-                  <span class="lines-arrow-spacer"></span>
-                  ${renderKeyboardKey({ label: "&uarr;", code: "ArrowUp", player: "two" })}
-                  <span class="lines-arrow-spacer"></span>
-                  ${renderKeyboardKey({ label: "&larr;", code: "ArrowLeft", player: "two" })}
-                  ${renderKeyboardKey({ label: "&darr;", code: "ArrowDown", player: "two" })}
-                  ${renderKeyboardKey({ label: "&rarr;", code: "ArrowRight", player: "two" })}
+                <div class="lines-arrow-controls">
+                  <p class="lines-action-hint">${t("pages.lines.actionHint")}</p>
+                  <div class="lines-arrow-cluster" aria-hidden="true">
+                    <span class="lines-arrow-spacer"></span>
+                    ${renderKeyboardKey({ label: "&uarr;", code: "ArrowUp", player: "two" })}
+                    <span class="lines-arrow-spacer"></span>
+                    ${renderKeyboardKey({ label: "&larr;", code: "ArrowLeft", player: "two" })}
+                    ${renderKeyboardKey({ label: "&darr;", code: "ArrowDown", player: "two" })}
+                    ${renderKeyboardKey({ label: "&rarr;", code: "ArrowRight", player: "two" })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -962,12 +965,63 @@ function renderLines(container, { t }) {
 
     drawLaserBursts(now);
 
-    state.runners.forEach((runner) => {
-      ctx.fillStyle = runner.player.color;
-      ctx.beginPath();
-      ctx.arc(runner.x, runner.y, headRadius, 0, Math.PI * 2);
-      ctx.fill();
-    });
+    state.runners.forEach((runner) => drawRunnerHead(runner));
+  }
+
+  function drawStandardHead(runner) {
+    ctx.fillStyle = runner.player.color;
+    ctx.beginPath();
+    ctx.arc(runner.x, runner.y, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawEliminatedHead(runner) {
+    const { x, y } = runner;
+
+    ctx.save();
+    ctx.fillStyle = runner.player.color;
+    ctx.beginPath();
+    ctx.arc(x, y, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "rgba(2, 6, 13, 0.92)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x - 1.5, y - headRadius + 1);
+    ctx.lineTo(x + 1.8, y - 1.8);
+    ctx.lineTo(x - 1.1, y + 1.2);
+    ctx.lineTo(x + 2.2, y + headRadius - 1);
+    ctx.stroke();
+
+    ctx.lineWidth = 1.35;
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, y - 0.5);
+    ctx.lineTo(x + headRadius - 1.2, y - 3.3);
+    ctx.moveTo(x - 0.6, y + 1.5);
+    ctx.lineTo(x - headRadius + 1.1, y + 3.6);
+    ctx.stroke();
+
+    ctx.strokeStyle = runner.player.color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x, y, headRadius + 1.2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawRunnerHead(runner) {
+    if (!runner.alive) {
+      drawEliminatedHead(runner);
+      return;
+    }
+
+    drawStandardHead(runner);
+  }
+
+  function markRunnerEliminated(runner) {
+    runner.alive = false;
   }
 
   function appendRunnerMove(runner, from, to) {
@@ -1072,7 +1126,7 @@ function renderLines(container, { t }) {
         targetRunner.alive &&
         doesLaserTouchRunnerHead(beam, targetRunner)
       ) {
-        targetRunner.alive = false;
+        markRunnerEliminated(targetRunner);
         eliminatedRunners.push(targetRunner);
       }
     });
@@ -1251,7 +1305,12 @@ function renderLines(container, { t }) {
       runner.y = to.y;
       runner.survivalTime += elapsed;
       appendRunnerMove(runner, move.from, to);
-      runner.alive = !move.crashed;
+
+      if (move.crashed) {
+        markRunnerEliminated(runner);
+      } else {
+        runner.alive = true;
+      }
     });
 
     if (eliminatedRunners.length > 0) {

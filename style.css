@@ -1761,6 +1761,16 @@ input[type="text"]::placeholder {
   line-height: 1;
 }
 
+.lines-action-hint {
+  max-width: 190px;
+  color: rgba(183, 196, 212, 0.58);
+  font-size: 0.76rem;
+  font-weight: 820;
+  line-height: 1.35;
+  text-align: right;
+  white-space: pre-line;
+}
+
 .lines-page .is-player-one {
   --player-color: #38bdf8;
   --player-rgb: 56, 189, 248;
@@ -1923,7 +1933,7 @@ input[type="text"]::placeholder {
 .lines-keyboard {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(132px, 190px);
-  align-items: end;
+  align-items: stretch;
   gap: 18px;
 }
 
@@ -2032,6 +2042,13 @@ input[type="text"]::placeholder {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+
+.lines-arrow-controls {
+  display: grid;
+  align-content: space-between;
+  gap: 12px;
+  min-width: 0;
 }
 
 @media (max-width: 980px) {
@@ -2148,9 +2165,25 @@ input[type="text"]::placeholder {
     grid-template-columns: 1fr;
   }
 
+  .lines-key-rows {
+    padding-right: 18px;
+  }
+
+  .lines-arrow-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
+    align-items: end;
+    justify-self: stretch;
+  }
+
+  .lines-action-hint {
+    max-width: none;
+    align-self: center;
+    text-align: left;
+  }
+
   .lines-arrow-cluster {
-    width: min(220px, 52%);
-    justify-self: end;
+    width: auto;
+    justify-self: stretch;
   }
 }
 
@@ -2232,6 +2265,10 @@ input[type="text"]::placeholder {
     gap: 8px;
   }
 
+  .lines-key-rows {
+    padding-right: 10px;
+  }
+
   .lines-spawn-left .lines-player-chip,
   .lines-spawn-right .lines-player-chip {
     width: 148px;
@@ -2274,8 +2311,17 @@ input[type="text"]::placeholder {
     font-size: 0.74rem;
   }
 
+  .lines-action-hint {
+    font-size: 0.68rem;
+  }
+
+  .lines-arrow-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(128px, 160px);
+    gap: 10px;
+  }
+
   .lines-arrow-cluster {
-    width: min(160px, 62%);
+    width: auto;
   }
 
   .plotter-page {

@@ -359,6 +359,7 @@ window.gagunLocales.en = {
       waitingForSecondPlayer: "One more player",
       starting: "Starting",
       joinPrompt: "Press a player key to activate player",
+      actionHint: "Press forward to shoot\nPress backward to block",
       countdownLabel: "Start in",
       winner: "{player} wins",
       noWinner: "No winner",
