@@ -12,8 +12,14 @@ HTML web page created by Gagun
 - `pages/fractals.js` registers the animated black-and-white Julia sets page.
 - `pages/periodic-table.js` registers an interactive periodic table with element details and category legend.
 - `pages/lines.js` registers the Lines game start screen with keyboard control groups.
+- `pages/ai-dialogs.js` registers the AI Dialogs page.
+- `functions/api/ai-dialog-turn.js` proxies one AI dialog turn through Cloudflare Pages Functions.
 
 To add another page, create a new file in `pages/`, push a page module into `window.gagunPageModules`, add its translation keys to the locale files, and include the new script in `index.html` before `app.js`.
+
+## AI Dialogs
+
+The AI Dialogs page keeps the UI static and sends individual model turns to `/api/ai-dialog-turn`. User-provided API keys stay in browser memory for the current session, are sent only in the active proxy request, and are excluded from Markdown/JSON exports.
 
 ## Routing
 

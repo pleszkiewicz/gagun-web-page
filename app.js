@@ -9,6 +9,10 @@ const appState = {
 
 const navigationSections = [
   {
+    id: "ai",
+    titleKey: "navigation.sections.ai",
+  },
+  {
     id: "mathematics",
     titleKey: "navigation.sections.mathematics",
   },
