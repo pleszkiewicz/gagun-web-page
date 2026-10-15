@@ -17,7 +17,9 @@ To add another page, create a new file in `pages/`, push a page module into `win
 
 ## Routing
 
-Pages use clean paths such as `/julia-sets`, `/periodic-table`, and `/lines` so analytics can report individual page URLs. The `_redirects` file keeps direct visits to those paths working on Cloudflare Pages by serving `index.html` for every route.
+Pages use clean paths such as `/julia-sets`, `/periodic-table`, and `/lines` so analytics can report individual page URLs. Before publishing to GitHub Pages, the deployment workflow loads the page modules included in `index.html` and copies the application shell to `<page-id>/index.html` for every registered page. This lets direct visits and browser refreshes work on static hosting, including URLs with a trailing slash. New pages are included automatically when registered and loaded in `index.html`.
+
+The application shell sets its base URL to `/`, so scripts, styles, and images still load from the site root on each route. The `_redirects` file provides the equivalent fallback on Cloudflare Pages; GitHub Pages does not use it.
 
 ## Analytics
 

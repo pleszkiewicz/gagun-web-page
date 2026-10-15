@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
+  # Generate route entry points and deploy in a single job
   deploy:
     environment:
       name: github-pages
@@ -33,6 +33,37 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate static entry points for app routes
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const vm = require("node:vm");
+          const index = fs.readFileSync("index.html", "utf8");
+          const context = vm.createContext({ window: { gagunPageModules: [] } });
+
+          for (const [, source] of index.matchAll(/<script\b[^>]*\bsrc="(pages\/[^"\s]+\.js)"/g)) {
+            vm.runInContext(fs.readFileSync(source, "utf8"), context, { filename: source });
+          }
+
+          const pages = context.window.gagunPageModules;
+          if (pages.length === 0) {
+            throw new Error("No app routes found; refusing to deploy without route entry points.");
+          }
+
+          for (const page of pages) {
+            if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(page.id)) {
+              throw new Error(`Invalid app route: ${page.id}`);
+            }
+
+            fs.mkdirSync(page.id);
+            fs.copyFileSync("index.html", `${page.id}/index.html`);
+            console.log(`Generated /${page.id}/index.html`);
+          }
+          NODE
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
