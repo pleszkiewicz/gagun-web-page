@@ -81,7 +81,9 @@
 
 .traffic-stage {
   position:relative;
-  height:calc(100dvh - 154px);
+  /* Keep the map height stable while mobile browser toolbars collapse. */
+  height:calc(100vh - 154px);
+  height:calc(100svh - 154px);
   min-height:520px;
   overflow:hidden;
   background:#f4f5ef;
@@ -222,7 +224,8 @@
   background:#ffffffed;
   border:1px solid #d7dfd2;
   border-radius:var(--radius);
-  max-height:calc(100dvh - 154px);
+  max-height:calc(100vh - 154px);
+  max-height:calc(100svh - 154px);
   min-height:520px;
   overflow:auto;
   scrollbar-width:thin;
@@ -614,7 +617,8 @@
     grid-template-columns:minmax(0,1fr);
   }
   .traffic-stage {
-    height:60dvh;
+    height:60vh;
+    height:60svh;
     min-height:390px;
   }
   .traffic-panel {

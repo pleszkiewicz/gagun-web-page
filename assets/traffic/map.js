@@ -17,6 +17,7 @@ window.gagunTraffic.createMap = function createTrafficMap(stage, simulation, { o
   const water = new Path2D(), built = new Path2D(), forest = new Path2D(), boundary = new Path2D();
   const hitGrid = new Map(), labels = [];
   let width = 1, height = 1, ratio = 1, fitScale = .05, dirty = true, selected = data.selected;
+  let resizePending = true;
   let dragDistance = 0, pinched = false, lastZoom = "", initialized = false, showCycling = true;
   let lastClosureVersion = -1, lastEventRevision = -1;
 
@@ -69,11 +70,17 @@ window.gagunTraffic.createMap = function createTrafficMap(stage, simulation, { o
 
   function resize() {
     const rect = stage.getBoundingClientRect();
+    const nextWidth = Math.max(1, rect.width), nextHeight = Math.max(1, rect.height);
+    const nextRatio = Math.min(2, window.devicePixelRatio || 1);
+    if (initialized && width === nextWidth && height === nextHeight && ratio === nextRatio) return;
     const oldFit = fitScale;
-    width = Math.max(1, rect.width); height = Math.max(1, rect.height);
+    width = nextWidth; height = nextHeight; ratio = nextRatio;
     fitScale = Math.min(width, height) / 10800;
-    ratio = Math.min(2, window.devicePixelRatio || 1);
-    for (const c of [base, canvas]) { c.width = Math.round(width * ratio); c.height = Math.round(height * ratio); }
+    const pixelWidth = Math.round(width * ratio), pixelHeight = Math.round(height * ratio);
+    for (const c of [base, canvas]) {
+      if (c.width !== pixelWidth) c.width = pixelWidth;
+      if (c.height !== pixelHeight) c.height = pixelHeight;
+    }
     if (!initialized) { camera.scale = fitScale; target.scale = fitScale; initialized = true; }
     else { camera.scale *= fitScale / oldFit; target.scale *= fitScale / oldFit; }
     dirty = true;
@@ -275,6 +282,8 @@ window.gagunTraffic.createMap = function createTrafficMap(stage, simulation, { o
     }
   }
   function draw(frame, dt) {
+    // Resize and repaint together so the browser cannot present a cleared bitmap.
+    if (resizePending) { resizePending = false; resize(); }
     let changed = false;
     if (lastClosureVersion !== frame.closureVersion || lastEventRevision !== frame.roadEvents.revision) {
       dirty = true; lastClosureVersion = frame.closureVersion; lastEventRevision = frame.roadEvents.revision;
@@ -337,7 +346,7 @@ window.gagunTraffic.createMap = function createTrafficMap(stage, simulation, { o
     for (const scooter of frame.scooters) microMarker(scooter, "#138f9c", true);
     for (const bus of frame.buses) if (visibleLines.has(bus.lineId)) marker(bus, bus.waiting ? "#ba4646" : lines.get(bus.lineId).color, true);
   }
-  const observer = new ResizeObserver(resize);
-  observer.observe(stage); resize();
+  const observer = new ResizeObserver(() => { resizePending = true; });
+  observer.observe(stage);
   return { draw, zoom, fit, focus, setCyclingVisible(value) { showCycling = value; dirty = true; }, invalidate() { dirty = true; }, destroy() { listeners.abort(); observer.disconnect(); pointers.clear(); } };
 };

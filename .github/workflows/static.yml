@@ -39,7 +39,7 @@ jobs:
           node-version: '22'
       - name: Check traffic simulation
         run: |
-          node --test tests/traffic-simulator.test.cjs
+          node --test tests/*.test.cjs
           python3 -B -m unittest discover -s tests -p 'test_*.py'
       - name: Generate static entry points for app routes
         run: |
