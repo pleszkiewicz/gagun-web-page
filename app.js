@@ -24,6 +24,10 @@ const navigationSections = [
     id: "games",
     titleKey: "navigation.sections.games",
   },
+  {
+    id: "simulations",
+    titleKey: "navigation.sections.simulations",
+  },
 ];
 
 const pageThemeVariables = {
@@ -467,7 +471,13 @@ window.addEventListener("popstate", renderActivePage);
 window.addEventListener("hashchange", handleLegacyHashChange);
 
 desktopOnlyMediaQueries.forEach((query) => {
-  query.addEventListener("change", renderActivePage);
+  query.addEventListener("change", () => {
+    if (getActivePage()?.requiresDesktop) {
+      renderActivePage();
+    } else {
+      renderNavigation();
+    }
+  });
 });
 
 window.addEventListener("keydown", (event) => {

@@ -1,0 +1,66 @@
+{
+  "publisher": "Statistics Poland / GUS, Bank Danych Lokalnych",
+  "retrieved": "2026-11-11",
+  "series": {
+    "cityPopulation": {
+      "totalRecords": 1,
+      "unitId": "042815505011",
+      "unitName": "Ełk",
+      "aggregateId": 1,
+      "results": [
+        {
+          "id": 72305,
+          "measureUnitId": 26,
+          "lastUpdate": "2026-05-06T08:51:41.913",
+          "values": [
+            {
+              "year": "2025",
+              "val": 58889,
+              "attrId": 1
+            }
+          ]
+        }
+      ]
+    },
+    "countyPopulation": {
+      "totalRecords": 1,
+      "unitId": "042815505000",
+      "unitName": "Powiat ełcki",
+      "aggregateId": 1,
+      "results": [
+        {
+          "id": 72305,
+          "measureUnitId": 26,
+          "lastUpdate": "2026-05-06T08:51:41.913",
+          "values": [
+            {
+              "year": "2025",
+              "val": 87671,
+              "attrId": 1
+            }
+          ]
+        }
+      ]
+    },
+    "countyPassengerCars": {
+      "totalRecords": 1,
+      "unitId": "042815505000",
+      "unitName": "Powiat ełcki",
+      "aggregateId": 1,
+      "results": [
+        {
+          "id": 32561,
+          "measureUnitId": 8,
+          "lastUpdate": "2026-09-30T10:18:12.517",
+          "values": [
+            {
+              "year": "2025",
+              "val": 41765,
+              "attrId": 1
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

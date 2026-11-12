@@ -1,0 +1,217 @@
+.traffic-closure-panel {
+  border-top:1px solid #e2e8dd;
+  padding-top:12px;
+  min-width:0;
+}
+
+.traffic-closure-panel [hidden] {
+  display:none;
+}
+
+.traffic-closure-panel summary {
+  cursor:pointer;
+  color:#395b45;
+  font-size:.78rem;
+  font-weight:650;
+}
+
+.traffic-closure-panel summary output {
+  float:right;
+  margin-left:6px;
+  color:#6a7f70;
+  font-size:.63rem;
+  font-weight:400;
+  font-variant-numeric:tabular-nums;
+}
+
+.traffic-closure-instructions {
+  margin:10px 0;
+}
+
+.traffic-page .traffic-closure-clear {
+  min-height:30px;
+  padding:5px 10px;
+  font-size:.68rem;
+}
+
+.traffic-closure-active {
+  display:grid;
+  gap:7px;
+  margin:13px 0;
+}
+
+.traffic-closure-active h3 {
+  margin:0;
+  color:#526b59;
+  font-size:.69rem;
+  font-weight:600;
+}
+
+.traffic-closure-active-list {
+  display:grid;
+  gap:6px;
+  max-height:180px;
+  overflow:auto;
+  overscroll-behavior:contain;
+  list-style:none;
+  padding:0;
+  margin:0;
+}
+
+.traffic-closure-active-list:empty {
+  display:none;
+}
+
+.traffic-closure-active-item {
+  display:grid;
+  gap:5px;
+  min-width:0;
+  padding:7px 9px;
+  border:1px solid #f0e0d6;
+  border-radius:5px;
+  background:#fbf2ee;
+}
+
+.traffic-closure-active-item .traffic-closure-name {
+  color:#984d3b;
+}
+
+.traffic-closure-active-item .traffic-closure-meta {
+  color:#937469;
+}
+
+.traffic-closure-active-actions {
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:12px;
+}
+
+.traffic-page .traffic-closure-reopen {
+  min-height:28px;
+  padding:3px 8px;
+  color:#86513f;
+  background:white;
+  font-size:.65rem;
+}
+
+.traffic-closure-search-label {
+  display:grid;
+  gap:5px;
+  font-size:.7rem;
+  color:#526a5b;
+}
+
+.traffic-closure-search {
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  min-height:34px;
+  padding:6px 8px;
+  color:#284d3a;
+  background:#f4f6f0;
+  border:1px solid #d4ddcf;
+  border-radius:5px;
+  font:inherit;
+}
+
+.traffic-closure-results {
+  display:block;
+  margin:7px 0 4px;
+  font-variant-numeric:tabular-nums;
+}
+
+.traffic-closure-streets {
+  display:grid;
+  max-height:260px;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+
+.traffic-closure-row {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  padding:7px 1px;
+  border-bottom:1px solid #edf0e9;
+}
+
+.traffic-closure-label {
+  display:grid;
+  grid-template-columns:16px minmax(0,1fr);
+  align-items:start;
+  gap:8px;
+  min-width:0;
+  cursor:pointer;
+}
+
+.traffic-closure-label input {
+  margin:2px 0 0;
+  accent-color:#b75a43;
+}
+
+.traffic-closure-road-text {
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+
+.traffic-closure-name {
+  font-size:.7rem;
+  color:#496551;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+
+.traffic-closure-meta {
+  font-size:.62rem;
+  color:#718578;
+  line-height:1.4;
+  font-variant-numeric:tabular-nums;
+}
+
+.traffic-closure-panel .traffic-closure-find {
+  padding:3px 0;
+  font-size:.66rem;
+  white-space:nowrap;
+}
+
+.traffic-closure-empty {
+  margin:8px 0;
+}
+
+.traffic-events-panel {
+  border-top:1px solid #e2e8dd;
+  padding-top:12px;
+  min-width:0;
+}
+
+.traffic-events-panel [hidden] { display:none; }
+.traffic-events-panel summary { cursor:pointer; color:#395b45; font-size:.78rem; font-weight:650; }
+.traffic-events-panel summary output { float:right; color:#6a7f70; font-size:.67rem; font-weight:400; }
+.traffic-events-panel>p { margin:10px 0; }
+.traffic-event-controls { display:grid; gap:8px; min-width:0; padding:8px 0 12px; margin:0; border:0; }
+.traffic-event-controls legend { padding:0; font-size:.72rem; font-weight:650; }
+.traffic-event-accident { color:#b34a43; }
+.traffic-event-roadwork { color:#9c6b1f; }
+.traffic-event-controls input { width:100%; min-width:0; margin:0; color:inherit; accent-color:currentColor; }
+.traffic-event-controls:has(.traffic-event-accident) { color:#b34a43; }
+.traffic-event-controls:has(.traffic-event-roadwork) { color:#9c6b1f; }
+.traffic-event-stats { font-variant-numeric:tabular-nums; }
+.traffic-event-list { display:grid; gap:7px; max-height:250px; overflow:auto; overscroll-behavior:contain; padding:0; margin:0; list-style:none; }
+.traffic-event-list:empty { display:none; }
+.traffic-event-item { display:grid; gap:4px; min-width:0; padding:8px 10px; background:#fbf2ee; border:1px solid #eed9d1; border-left:3px solid currentColor; border-radius:5px; }
+.traffic-event-item.traffic-event-roadwork { background:#fcf7e9; border-color:#eadcba; }
+.traffic-event-type { font-size:.65rem; font-weight:650; }
+.traffic-event-remaining { font-size:.72rem; font-weight:600; font-variant-numeric:tabular-nums; }
+.traffic-events-panel .traffic-link-button { font-size:.66rem; }
+
+@media (max-width:600px) {
+  .traffic-closure-name {
+    font-size:.75rem;
+  }
+  .traffic-closure-meta,.traffic-closure-panel summary output {
+    font-size:.67rem;
+  }
+}
