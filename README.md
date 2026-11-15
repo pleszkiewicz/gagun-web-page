@@ -12,6 +12,7 @@ HTML web page created by Gagun
 - `pages/fractals.js` registers the animated black-and-white Julia sets page.
 - `pages/periodic-table.js` registers an interactive periodic table with element details and category legend.
 - `pages/lines.js` registers the Lines game start screen with keyboard control groups.
+- `pages/bomberman.js` registers `/bomberman`, a local 2–4 player arena game with keyboard registration, three visual styles, replaceable SVG artwork and WAV sound effects. See the [game design, controls and asset guide](docs/bomberman/README.md).
 - `pages/traffic-simulator.js` registers `/traffic-simulator`, a buildless Ełk traffic pilot with all 16 saved MZK lines, visibility controls, directed-road car routing, pedestrian/bicycle/scooter travel, mapped cycling infrastructure and searchable multi-street road closures. Its map supports drag, wheel/pinch zoom and keyboard navigation.
 
 To add another page, create a new file in `pages/`, push a page module into `window.gagunPageModules`, add its translation keys to the locale files, and include the new script in `index.html` before `app.js`.

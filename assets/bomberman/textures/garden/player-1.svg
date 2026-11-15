@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+          <ellipse cx="32" cy="58" rx="21" ry="5" fill="#192b38" opacity=".18"/>
+          <path d="M32 11V5m0 0c-8-6-12-2-9 2 2 3 7 2 9-2" fill="#29b7cc" stroke="#245660" stroke-width="1.3"/>
+          <rect x="18" y="36" width="28" height="21" rx="9" fill="#29b7cc"/>
+          <rect x="12" y="40" width="9" height="12" rx="4" fill="#29b7cc"/>
+          <rect x="43" y="40" width="9" height="12" rx="4" fill="#29b7cc"/>
+          <rect x="18" y="52" width="12" height="9" rx="4" fill="#263444"/>
+          <rect x="34" y="52" width="12" height="9" rx="4" fill="#263444"/>
+          <rect x="11" y="9" width="42" height="34" rx="14" fill="#29b7cc"/>
+          <path d="M20 14h17" stroke="#fff" opacity=".46" stroke-width="3" stroke-linecap="round"/>
+          <rect x="17" y="20" width="30" height="17" rx="7" fill="#f6f4df"/>
+          <rect x="24" y="24" width="4" height="8" rx="2" fill="#263444"/>
+          <rect x="36" y="24" width="4" height="8" rx="2" fill="#263444"/>
+          <circle cx="32" cy="47" r="6" fill="#fff" opacity=".85"/>
+          <text x="32" y="50" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="bold" fill="#263444">1</text>
+        </svg>
