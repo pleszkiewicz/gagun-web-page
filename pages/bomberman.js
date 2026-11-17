@@ -426,12 +426,14 @@ function renderBomberman(container, { t }) {
       }
       round.advance(delta);
       const played = new Set();
-      for (const event of round.drainEvents()) {
+      const events = round.drainEvents();
+      for (const event of events) {
         if (!played.has(event.type) && Object.hasOwn(game.sounds, event.type)) {
           audio.play(event.type);
           played.add(event.type);
         }
       }
+      if (events.some(event => ["pickup", "shield", "elimination"].includes(event.type))) updatePlayers();
       if (round.state.phase === "finished") {
         clearInput();
         phase = "result";
@@ -446,7 +448,6 @@ function renderBomberman(container, { t }) {
     if (timestamp - lastUiUpdate > 150) {
       lastUiUpdate = timestamp;
       updateClock();
-      if (phase === "running") updatePlayers();
     }
     animationId = requestAnimationFrame(frame);
   }

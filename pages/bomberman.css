@@ -6,6 +6,7 @@
 }
 
 .page-viewport[data-page-id="bomberman"] > .page-host { height: 100%; min-height: 0; }
+.page-viewport[data-page-id="bomberman"]:focus, .bm-page:focus { outline: none; }
 .site-shell:has(> .page-viewport[data-page-id="bomberman"]) > .menu-toggle { top: 12px; left: 16px; width: 44px; height: 44px; }
 .page-viewport[data-page-id="bomberman"]::before { display: none; }
 .page-viewport[data-page-id="bomberman"]:has(.bm-page[data-theme="garden"]) { background: #f3f4ed; }

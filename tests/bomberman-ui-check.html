@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bomberman UI regression check</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/pages/bomberman.css?v=7">
+  <script src="/assets/bomberman/engine.js?v=3"></script>
+  <script src="/assets/bomberman/manifest.js?v=2"></script>
+  <script src="/pages/bomberman.js?v=7"></script>
+</head>
+<body>
+  <button id="run">Run UI regression check</button>
+  <pre id="result">Ready</pre>
+  <main class="page-viewport" data-page-id="bomberman" tabindex="-1"><div id="host"></div></main>
+  <script>
+    document.querySelector('#run').addEventListener('click', () => {
+      const game = window.gagunBomberman;
+      const host = document.querySelector('#host');
+      let state;
+      let callback;
+      let now = 1000;
+      let checks = 0;
+      const failures = [];
+      const createRound = game.createRound;
+      game.createRound = ids => createRound(ids, { random: () => 0.99 });
+      game.createRenderer = () => ({ resize() {}, draw(current) { state = current; } });
+      game.createAudio = () => ({ play() {}, unlock() {}, setVolume() {}, dispose() {} });
+      window.requestAnimationFrame = fn => { callback = fn; return 1; };
+      window.cancelAnimationFrame = () => {};
+      const click = selector => host.querySelector(selector).click();
+      const tick = (ms = 20) => { now += ms; callback(now); };
+      const check = (condition, label) => { checks++; if (!condition) failures.push(label); };
+      const checkStats = label => {
+        for (const player of state.players) {
+          const stats = host.querySelector(`[data-player="${player.id}"] [data-player-stats]`);
+          const actual = Array.from(stats.children, span => Number(span.textContent));
+          const expected = [player.capacity, player.range, player.speed, ...(player.shield ? [1] : [])];
+          check(!stats.hidden && JSON.stringify(actual) === JSON.stringify(expected), `${label}, P${player.id + 1}: panel [${actual}] != engine [${expected}]`);
+        }
+      };
+      const checkReset = label => {
+        checkStats(label);
+        for (const player of state.players) {
+          const actual = [player.capacity, player.range, player.speed, player.shield, player.alive];
+          check(JSON.stringify(actual) === JSON.stringify([2, 2, 0, false, true]), `${label}, P${player.id + 1}: starting values [${actual}] != [2,2,0,false,true]`);
+        }
+        check(state.elapsed === 0 && state.phase === 'running', `${label}: new round has not started`);
+        check(state.bombs.length === 0 && state.flames.size === 0 && state.items.size === 0, `${label}: objects carried over from previous round`);
+        check(host.querySelector('[data-clock]').textContent === '02:30', `${label}: clock was not reset`);
+      };
+      for (const ids of [[0, 1], [1, 2, 3], [0, 1, 2, 3]]) {
+        const cleanup = window.gagunPageModules[0].render(host, { t: key => key });
+        const scenario = `${ids.length} players`;
+        for (const id of ids) click(`[data-join="${id}"]`);
+        click('[data-action="start"]');
+        checkReset(`${scenario}, initial round`);
+        tick();
+        tick(160);
+        for (let round = 1; round <= 4; round++) {
+          const label = `${scenario}, round ${round}`;
+          checkStats(`${label} start`);
+          for (const type of ['bomb', 'flame', 'speed', 'shield']) {
+            for (const player of state.players) {
+              state.items.set(`${player.x},${player.y}`, { x: player.x, y: player.y, type, availableAt: 0 });
+            }
+            tick();
+            checkStats(`${label}, immediately after ${type} pickup`);
+            tick(160);
+            checkStats(`${label}, after UI interval`);
+          }
+          for (const player of state.players) {
+            state.flames.set(`${player.x},${player.y}`, { x: player.x, y: player.y, expiresAt: state.elapsed + 1 });
+          }
+          tick();
+          checkStats(`${label}, immediately after shield consumption`);
+          state.flames.clear();
+          for (const player of state.players.slice(1)) player.alive = false;
+          tick();
+          check(host.querySelector('.bm-page').dataset.phase === 'result', `${label} result`);
+          click('[data-action="next"]');
+          checkReset(`${label}: reset before first frame`);
+          const winnerScore = Number(host.querySelector(`[data-player="${ids[0]}"] [data-score]`).textContent);
+          check(winnerScore === round % 3, `${label}: next round or new match score is incorrect`);
+          tick(160);
+        }
+        cleanup();
+      }
+      document.querySelector('#result').textContent = `${failures.length ? 'FAIL' : 'PASS'}: ${checks - failures.length}/${checks} checks\n${failures.join('\n')}`;
+      document.querySelector('#run').disabled = true;
+    });
+  </script>
+</body>
+</html>

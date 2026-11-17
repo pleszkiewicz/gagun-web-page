@@ -69,15 +69,45 @@ test("movement stops at stone, breakable blocks and bombs, but a planter can ste
   assert.equal(round.move(0, 0, 1), false);
 });
 
-test("a bomb respects its fuse and its owner's capacity, which recovers after detonation", () => {
+test("players can place two bombs initially, reject a third and recover capacity after detonation", () => {
   const round = arena();
   plant(round, 0, 3, 3);
+  plant(round, 0, 7, 3);
   assert.equal(round.placeBomb(0), false);
   round.advance(2.39);
-  assert.equal(round.state.bombs.length, 1);
+  assert.equal(round.state.bombs.length, 2);
   round.advance(0.02);
   assert.equal(round.state.bombs.length, 0);
-  assert.equal(round.placeBomb(0), true);
+  plant(round, 0, 3, 3);
+  plant(round, 0, 7, 3);
+  assert.equal(round.placeBomb(0), false);
+});
+
+test("new rounds reset every player's upgrades and restore the two-bomb starting capacity", () => {
+  for (const ids of [[0, 1], [1, 2, 3], [0, 1, 2, 3]]) {
+    const round = arena(ids);
+    for (const player of round.state.players) {
+      assert.equal(player.capacity, 2);
+      const key = `${player.x},${player.y}`;
+      for (const type of ["bomb", "flame", "speed", "shield"]) {
+        round.state.items.set(key, { x: player.x, y: player.y, type, availableAt: 0 });
+        round.advance(0.02);
+      }
+      assert.equal(player.capacity, 3);
+      assert.equal(player.range, 3);
+      assert.equal(player.speed, 1);
+      assert.equal(player.shield, true);
+    }
+    const next = game.createRound(ids, { random: () => 0.99 });
+    for (const player of next.state.players) {
+      assert.equal(player.capacity, 2);
+      assert.equal(player.range, 2);
+      assert.equal(player.speed, 0);
+      assert.equal(player.shield, false);
+      assert.equal(player.alive, true);
+    }
+    assert.equal(next.state.bombs.length, 0);
+  }
 });
 
 test("a cross-shaped blast stops at stone and the first breakable block in each direction", () => {
@@ -123,7 +153,7 @@ test("a hidden bonus appears after its revealing fire fades and can be collected
   round.advance(0.65);
   const player = locate(round, 0, 5, 3);
   round.advance(0.02);
-  assert.equal(player.capacity, 2);
+  assert.equal(player.capacity, 3);
   assert.equal(round.state.items.has("5,3"), false);
 });
 

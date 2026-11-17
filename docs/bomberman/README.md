@@ -7,7 +7,7 @@ Local multiplayer for two, three or four people sharing a keyboard, available at
 1. Join by pressing any movement or bomb key belonging to your player. The lobby shows each player's colour, character, controls and readiness. Players can also click their card to join or leave.
 2. With at least two players, a five-second countdown begins. Each newly joined player restarts it so the others have time to join. Space starts immediately.
 3. Players spawn in separate corners of a symmetric 17 × 13 arena. Stone walls cannot be destroyed. Terracotta blocks, neon crates or cardboard boxes can be destroyed. All four corners have two clear exits and an equally placed first range bonus.
-4. Everyone starts with one active bomb and a two-tile blast range. Tap the action key to place a bomb at your current cell. The fuse lasts 2.4 seconds of game time. You can leave the bomb's tile, but bombs block re-entry. Players can pass each other.
+4. Everyone starts with a capacity of two simultaneously active bombs and a two-tile blast range. Tap the action key to place a bomb at your current cell. The fuse lasts 2.4 seconds of game time. You can leave the bomb's tile, but bombs block re-entry. Players can pass each other.
 5. A blast spreads along the four cardinal directions. Stone stops it. The first breakable block in each direction is destroyed and stops that arm of the blast. A bomb hit by a flame detonates immediately, causing chain reactions. Blocks continue to block all explosions in the same chain before removal.
 6. Flames last 0.6 seconds and can eliminate any player, including the bomb's owner. Simultaneous deaths are resolved together, so a simultaneous final knockout is a draw.
 7. Some destroyed blocks reveal bonuses after their flames disappear. Exposed bonuses can be destroyed by a later blast. Pickups apply immediately and last for the current round.
@@ -24,7 +24,9 @@ Escape or the pause button freezes movement, fuses, fire and the round clock. Op
 | P3 | Violet, star antenna, number 3 | I / J / K / L | O |
 | P4 | Mint, round antenna, number 4 | T / F / G / H | Y |
 
-The twenty player keys do not overlap. P2 uses physical `ShiftRight`, shown as **R Shift**; Left Shift and Enter do not place bombs. Bombs require a fresh press, rather than the operating system's repeat events. Holding a movement key repeats movement; quick taps move one cell and turns can be buffered during a step. Space starts a round or proceeds from results. Escape pauses/resumes. Controls use physical `KeyboardEvent.code` positions, as in Lines. Starting each round moves keyboard focus back to the game.
+The twenty player keys do not overlap. P2 uses physical `ShiftRight`, shown as **R Shift**; Left Shift and Enter do not place bombs. Bombs require a fresh press, rather than the operating system's repeat events. Holding a movement key repeats movement; quick taps move one cell and turns can be buffered during a step. Space starts a round or proceeds from results. Escape pauses/resumes. Controls use physical `KeyboardEvent.code` positions, as in Lines. Starting each round moves keyboard focus back to the game without outlining the whole view. Buttons and links retain visible keyboard focus.
+
+The player panel reads the current round's state and updates in the same frame as pickups, shield consumption and eliminations. Starting another round restores the two-bomb capacity, two-tile range, zero speed upgrades and no shield in both the game and the panel.
 
 Many ordinary keyboards cannot register all four players' simultaneous inputs. A keyboard with multi-key rollover or an additional USB keyboard can help. The game includes this tip in its guide. It requires a desktop-sized screen and keyboard, following the same availability checks as Lines.
 
@@ -87,6 +89,7 @@ The reproducible originals can be rebuilt with `python3 scripts/build-bomberman-
 - `assets/bomberman/audio.js`: audio loading, playback, volume and cleanup.
 - `pages/bomberman.js` and `pages/bomberman.css`: registration, match scores, controls, pause, guide and layout.
 - `tests/bomberman.test.cjs`: deterministic behaviour and asset/route checks; run `node --test tests/bomberman.test.cjs`.
+- `tests/bomberman-ui-check.html`: browser regression check for the real page controller and player panel across four rounds each with two, three and four players, including new matches. Serve the repository over HTTP, open this file and click **Run UI regression check**. It controls frame timing, compares displayed stats with the engine after each pickup and shield consumption, and verifies the explicit starting values (2 bombs, range 2, speed 0, no shield) immediately after **Next round**, before the first animation frame.
 
 The existing GitHub Pages workflow discovers the registered `/bomberman` module and generates its static route entry point automatically. No package installation, framework, backend or build step is added.
 
@@ -96,4 +99,4 @@ The existing GitHub Pages workflow discovers the registered `/bomberman` module 
 - [Konami's controls manual](https://dds.konami.com/games/manual/sbro/multi/en/pc/) uses separate movement and bomb-placement actions.
 - [Bombermaaan's documented features](https://bombermaaan.sourceforge.net/features.php.html) describe shared-computer multiplayer, an initial one-bomb/two-tile range, items hidden in soft walls, extra bombs, increased range and speed.
 
-Fuse length, arena size, scoring target, item limits, shield and the artwork are explicit choices for this implementation. Kicking/throwing bombs, remote detonation, bots, online play, gamepads and background music are possible future additions; they are not part of this version.
+The two-bomb starting capacity, fuse length, arena size, scoring target, item limits, shield and the artwork are explicit choices for this implementation. Kicking/throwing bombs, remote detonation, bots, online play, gamepads and background music are possible future additions; they are not part of this version.
